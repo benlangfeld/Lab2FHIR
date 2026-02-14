@@ -6,11 +6,7 @@ echo "🚀 Setting up Lab2FHIR development environment..."
 
 # Install GitHub Copilot CLI
 echo "📦 Installing GitHub Copilot CLI..."
-if ! command -v gh &> /dev/null; then
-    echo "❌ GitHub CLI not found, skipping Copilot CLI installation"
-else
-    gh extension install github/gh-copilot 2>&1 | grep -v "already installed" || echo "ℹ️  Copilot CLI ready (may require 'gh auth login')"
-fi
+gh extension install github/gh-copilot 2>&1 | grep -v "already installed" || echo "ℹ️  Copilot CLI ready (may require 'gh auth login')"
 
 # Install spec-kit CLI
 echo "📦 Installing spec-kit CLI..."
@@ -48,12 +44,8 @@ echo ""
 echo "✅ Installation complete!"
 echo ""
 echo "Available tools:"
-if command -v gh &> /dev/null; then
-    echo "  - gh (GitHub CLI): $(gh --version 2>/dev/null | head -1 || echo 'installed')"
-    echo "  - gh copilot: $(gh copilot --version 2>&1 | head -1 || echo 'run \"gh auth login\" to enable')"
-else
-    echo "  - gh (GitHub CLI): not available"
-fi
+echo "  - gh (GitHub CLI): $(gh --version 2>/dev/null | head -1 || echo 'installed')"
+echo "  - gh copilot: $(gh copilot --version 2>&1 | head -1 || echo 'run \"gh auth login\" to enable')"
 
 if command -v specify &> /dev/null; then
     echo "  - specify (spec-kit): $(specify --version 2>/dev/null | head -1 || echo 'installed')"

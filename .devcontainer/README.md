@@ -38,7 +38,6 @@ specify --help
 
 2. **Wait for setup**: The devcontainer will automatically:
    - Install GitHub CLI with Copilot extension
-   - Install Node.js LTS
    - Install Python 3.11
    - Install spec-kit CLI via uv
 

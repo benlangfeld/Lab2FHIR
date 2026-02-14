@@ -59,7 +59,7 @@ A user accidentally uploads the same lab report PDF twice and the system recogni
 
 ---
 
-### User Story 3 - Prevent Duplicate Imports (Priority: P2)
+### User Story 3 - Normalize Units Across Time (Priority: P2)
 
 A user uploads lab reports from different labs taken over several years with varying unit systems (mg/dL vs mmol/L) and the system normalizes units to consistent standards, enabling accurate longitudinal comparisons.
 
@@ -75,7 +75,7 @@ A user uploads lab reports from different labs taken over several years with var
 
 ---
 
-### User Story 4 - Normalize Units Across Time (Priority: P3)
+### User Story 4 - Preserve Original Documents (Priority: P3)
 
 A user needs to verify original lab results or share the official report with a healthcare provider and can retrieve the original PDF document that was uploaded, linked to all derived FHIR resources.
 

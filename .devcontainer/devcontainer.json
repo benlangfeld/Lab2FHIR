@@ -1,0 +1,30 @@
+{
+  "name": "Lab2FHIR Development",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "installDirectlyFromGitHubRelease": true,
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "GitHub.copilot",
+        "GitHub.copilot-chat"
+      ]
+    }
+  },
+
+  "postCreateCommand": ".devcontainer/post-create.sh",
+
+  "remoteUser": "codespace"
+}

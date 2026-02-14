@@ -1,7 +1,7 @@
 """FHIR R4 resource converter."""
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from fhir.resources.bundle import Bundle, BundleEntry, BundleEntryRequest
@@ -34,6 +34,27 @@ class FHIRConverter:
     def _generate_id(self) -> str:
         """Generate a unique ID for FHIR resources."""
         return str(uuid.uuid4())
+
+    def _ensure_instant_format(self, dt_string: Optional[str]) -> str:
+        """
+        Ensure datetime string is in FHIR Instant format (with timezone).
+        
+        Args:
+            dt_string: ISO datetime string
+            
+        Returns:
+            FHIR Instant formatted string (YYYY-MM-DDTHH:MM:SS+00:00)
+        """
+        if not dt_string:
+            # Return current UTC time with timezone
+            return datetime.now(timezone.utc).isoformat()
+        
+        # If already has timezone info, return as is
+        if dt_string.endswith('Z') or '+' in dt_string or dt_string.count('-') > 2:
+            return dt_string
+        
+        # Add UTC timezone
+        return dt_string + '+00:00'
 
     def _create_patient_reference(self, lab_report: LabReport) -> dict:
         """
@@ -79,9 +100,9 @@ class FHIRConverter:
         report_date = None
         if lab_report.report_date:
             normalized = self.date_normalizer.normalize_datetime(lab_report.report_date)
-            report_date = normalized or datetime.now().isoformat()
+            report_date = self._ensure_instant_format(normalized)
         else:
-            report_date = datetime.now().isoformat()
+            report_date = self._ensure_instant_format(None)
 
         # Create attachment with base64 PDF
         attachment = Attachment(
@@ -144,14 +165,12 @@ class FHIRConverter:
             effective_date = self.date_normalizer.normalize_datetime(
                 lab_report.collection_date
             )
-        if not effective_date:
-            effective_date = datetime.now().isoformat()
+        effective_date = self._ensure_instant_format(effective_date)
 
         issued_date = None
         if lab_report.report_date:
             issued_date = self.date_normalizer.normalize_datetime(lab_report.report_date)
-        if not issued_date:
-            issued_date = datetime.now().isoformat()
+        issued_date = self._ensure_instant_format(issued_date)
 
         # Create category
         category = [
@@ -236,8 +255,7 @@ class FHIRConverter:
             effective_date = self.date_normalizer.normalize_datetime(
                 lab_report.collection_date
             )
-        if not effective_date:
-            effective_date = datetime.now().isoformat()
+        effective_date = self._ensure_instant_format(effective_date)
 
         # Create category
         category = [

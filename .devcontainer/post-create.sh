@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 echo "🚀 Setting up Lab2FHIR development environment..."
 
@@ -33,7 +33,7 @@ fi
 # Install spec-kit via uv if available
 if command -v uv &> /dev/null; then
     echo "📦 Installing spec-kit via uv..."
-    if uv tool install specify-cli --from git+https://github.com/github/spec-kit.git 2>&1 | grep -E "(Installed|installed)" || true; then
+    if uv tool install specify-cli --from git+https://github.com/github/spec-kit.git 2>&1 | grep -E "(Installed|installed)"; then
         export PATH="$HOME/.local/bin:$PATH"
         echo "✅ spec-kit CLI installed"
     else

@@ -34,7 +34,7 @@ specify --help
 
 ## 🚀 Getting Started
 
-1. **Open in Codespace**: Click the "Code" button on GitHub and select "Create codespace on main"
+1. **Open in Codespace**: Click the "Code" button on GitHub and select "Create codespace"
 
 2. **Wait for setup**: The devcontainer will automatically:
    - Install GitHub CLI with Copilot extension

@@ -9,18 +9,19 @@
 
 ### User Story 1 - Upload and Process Single Lab Report (Priority: P1)
 
-A household health manager uploads a PDF lab report from their personal medical records via the web interface and receives the structured data in their FHIR store within minutes, enabling them to track health trends over time.
+A household health manager uploads a PDF lab report from their personal medical records via the web interface, reviews the extracted intermediate data for accuracy, and downloads a FHIR Bundle that can be manually uploaded to their FHIR store (e.g., Fasten), enabling them to track health trends over time.
 
-**Why this priority**: This is the core value proposition - converting a single lab PDF into FHIR resources. Without this, the system provides no value. This represents the minimal viable product.
+**Why this priority**: This is the core value proposition - converting a single lab PDF into FHIR resources. Without this, the system provides no value. This represents the minimal viable product. Manual download and upload of the FHIR Bundle allows for verification and provides value without requiring FHIR server integration initially.
 
-**Independent Test**: Can be fully tested by uploading a single lab PDF file through the web interface, verifying the system extracts and structures the data, generates valid FHIR resources (Observation, DiagnosticReport, DocumentReference), and successfully stores them. Success is confirmed by querying the FHIR store and seeing the lab results as structured observations.
+**Independent Test**: Can be fully tested by uploading a single lab PDF file through the web interface, verifying the system extracts and structures the data into the intermediate JSON representation, allowing manual verification against the original PDF, and generating a valid FHIR Bundle (Observation, DiagnosticReport, DocumentReference) that can be downloaded. Success is confirmed by manually uploading the bundle to a FHIR store and querying to see the lab results as structured observations.
 
 **Acceptance Scenarios**:
 
-1. **Given** a household manager has a lab PDF report and an existing patient profile, **When** they upload the PDF through the web interface and select the patient, **Then** the system extracts text, parses lab results using structured LLM prompting, validates against the intermediate JSON schema, and generates a FHIR Bundle
-2. **Given** a valid FHIR Bundle has been generated, **When** the system submits it to the configured FHIR store, **Then** the data appears as queryable Observations linked to a DiagnosticReport with the original PDF preserved as a DocumentReference
-3. **Given** a successfully processed lab report, **When** the user views the processing status in the web interface, **Then** they see "Completed" status with a confirmation that data was imported to the FHIR store
-4. **Given** a successfully processed lab report, **When** the user queries their FHIR store, **Then** they can retrieve specific analyte values (e.g., "show me all glucose readings") with correct units and dates
+1. **Given** a household manager has a lab PDF report and an existing patient profile, **When** they upload the PDF through the web interface and select the patient, **Then** the system extracts text, parses lab results using structured LLM prompting, validates against the intermediate JSON schema, and displays the intermediate representation for review
+2. **Given** the intermediate representation is displayed, **When** the user reviews it against the original PDF, **Then** they can verify the extracted data is accurate before proceeding
+3. **Given** the user has verified the intermediate representation, **When** they confirm to proceed, **Then** the system generates a valid FHIR Bundle
+4. **Given** a valid FHIR Bundle has been generated, **When** the user views the processing status, **Then** they see "Completed" status with a button to download the FHIR Bundle as a JSON file
+5. **Given** the user has downloaded the FHIR Bundle, **When** they manually upload it to their FHIR store (e.g., Fasten), **Then** the data appears as queryable Observations linked to a DiagnosticReport with the original PDF preserved as a DocumentReference
 
 ---
 
@@ -42,23 +43,23 @@ A household with multiple people (partner, children) and pets creates patient pr
 
 ---
 
-### User Story 3 - Prevent Duplicate Imports (Priority: P2)
+### User Story 2 - Prevent Duplicate Imports (Priority: P2)
 
-A user accidentally uploads the same lab report PDF twice and the system recognizes the duplicate, preventing redundant data entries in the FHIR store while still preserving both upload attempts for audit purposes.
+A user accidentally uploads the same lab report PDF twice and the system recognizes the duplicate, preventing redundant data entries and duplicate FHIR Bundle generation while still preserving both upload attempts for audit purposes.
 
-**Why this priority**: Duplicate prevention is critical for data integrity and prevents database bloat, but the system can function without it initially. Users can work around by manually managing uploads.
+**Why this priority**: Duplicate prevention is critical for data integrity and prevents wasted processing time and storage, but the system can function without it initially. Users can work around by manually managing uploads.
 
-**Independent Test**: Can be tested by uploading the same PDF file twice and verifying that: (1) the file hash is detected as a duplicate, (2) no duplicate FHIR Observations are created, (3) the system logs the duplicate attempt, and (4) querying the FHIR store shows only one set of observations for that collection date.
+**Independent Test**: Can be tested by uploading the same PDF file twice and verifying that: (1) the file hash is detected as a duplicate, (2) no duplicate FHIR Bundle is generated, (3) the system logs the duplicate attempt, and (4) the user is notified that the file was already processed.
 
 **Acceptance Scenarios**:
 
 1. **Given** a lab PDF has been previously uploaded, **When** the exact same file is uploaded again, **Then** the system detects the duplicate by file hash and prevents reprocessing
-2. **Given** the same lab data from different PDF files (e.g., downloaded twice from portal), **When** both are uploaded, **Then** the system uses deterministic identifiers to prevent duplicate Observations from being created
+2. **Given** the same lab data from different PDF files (e.g., downloaded twice from portal), **When** both are uploaded, **Then** the system uses deterministic identifiers to prevent duplicate FHIR Bundle generation
 3. **Given** a reprocessing attempt of a previously failed upload, **When** the corrected file is uploaded, **Then** the system allows reprocessing while maintaining data integrity
 
 ---
 
-### User Story 4 - Normalize Units Across Time (Priority: P3)
+### User Story 3 - Normalize Units Across Time (Priority: P3)
 
 A user uploads lab reports from different labs taken over several years with varying unit systems (mg/dL vs mmol/L) and the system normalizes units to consistent standards, enabling accurate longitudinal comparisons.
 
@@ -74,7 +75,7 @@ A user uploads lab reports from different labs taken over several years with var
 
 ---
 
-### User Story 5 - Preserve Original Documents (Priority: P3)
+### User Story 4 - Preserve Original Documents (Priority: P3)
 
 A user needs to verify original lab results or share the official report with a healthcare provider and can retrieve the original PDF document that was uploaded, linked to all derived FHIR resources.
 
@@ -90,6 +91,42 @@ A user needs to verify original lab results or share the official report with a 
 
 ---
 
+### User Story 5 - Handle Multiple Patients (Priority: P4)
+
+A household with multiple people (partner, children) and pets creates patient profiles for each member, then uploads lab reports for different subjects and can distinguish between each person's or pet's results in their health records.
+
+**Why this priority**: Multi-patient support expands the system's utility for household-scale usage but is lower priority than core single-patient functionality. Users can work around by using a single patient profile initially or running multiple instances.
+
+**Independent Test**: Can be tested by first creating 2-3 patient profiles through the web interface (e.g., "John Doe" [human], "Jane Doe" [human], "Fluffy the Cat" [veterinary]), then uploading lab reports for each, and verifying that each report's FHIR Bundle correctly references the appropriate patient and that downloaded bundles maintain proper patient separation.
+
+**Acceptance Scenarios**:
+
+1. **Given** no patient profiles exist, **When** a user creates a new patient profile via the web interface specifying name and type (human/veterinary), **Then** the system generates a unique patient identifier and stores the profile
+2. **Given** multiple patient profiles exist, **When** a user uploads a lab report, **Then** the web interface displays a dropdown to select the appropriate patient profile
+3. **Given** lab reports exist for multiple household members, **When** a report is uploaded for a specific patient, **Then** the system correctly associates the lab results with the selected patient identifier in the generated FHIR Bundle
+4. **Given** lab reports for both humans and pets, **When** reports are processed, **Then** veterinary lab reports are handled correctly with appropriate subject references in the FHIR Bundle
+5. **Given** multiple patients in the system, **When** downloading FHIR Bundles, **Then** each bundle maintains the correct patient reference for its respective subject
+
+---
+
+### User Story 6 - Automatic FHIR Store Integration (Priority: P5)
+
+A household health manager configures their FHIR server connection details (e.g., Fasten endpoint, authentication), and after verifying the intermediate representation, the system automatically uploads the FHIR Bundle to the configured FHIR store, eliminating the manual upload step.
+
+**Why this priority**: Automatic FHIR store integration improves user experience by removing the manual download/upload step, but it's not essential for the MVP. The manual workflow (download bundle, then upload to Fasten) provides all core functionality while being simpler to implement and test initially.
+
+**Independent Test**: Can be fully tested by configuring a FHIR server endpoint, uploading a lab PDF, verifying the intermediate representation, confirming to proceed, and verifying that the FHIR Bundle is automatically submitted to the configured FHIR server without requiring manual download/upload. Success is confirmed by querying the FHIR store and seeing the lab results as structured observations.
+
+**Acceptance Scenarios**:
+
+1. **Given** FHIR server connection details are configured via environment variables or configuration file, **When** the system starts, **Then** it validates the connection to the FHIR server
+2. **Given** a valid FHIR Bundle has been generated and verified, **When** the user confirms to complete processing, **Then** the system automatically submits the bundle to the configured FHIR store
+3. **Given** a FHIR Bundle submission is successful, **When** the user views the processing status, **Then** they see "Completed" status with a confirmation that data was imported to the FHIR store and a link to view the data
+4. **Given** a FHIR Bundle submission fails, **When** the failure occurs, **Then** the system implements retry logic and notifies the user of the status
+5. **Given** automatic submission is configured, **When** a user prefers manual control, **Then** they can still download the bundle manually instead of using automatic submission
+
+---
+
 ### Edge Cases
 
 - What happens when a PDF contains no recognizable lab data (e.g., wrong document type)? System should reject with clear error message.
@@ -99,8 +136,9 @@ A user needs to verify original lab results or share the official report with a 
 - What happens when analyte names contain special characters or are abbreviated differently? System should handle variations and preserve original naming.
 - What happens when collection date is missing or ambiguous? System should flag for manual review.
 - What happens when the PDF is scanned/image-based rather than text-based? System should detect and reject with appropriate error message (out of scope for text-based parsing).
-- What happens when submission to FHIR store fails (network error, server down)? System should queue for retry and track failure status.
+- What happens when automatic FHIR store submission is configured and submission fails (network error, server down)? System should queue for retry and track failure status (P5 feature).
 - What happens when the same lab analyte appears multiple times in one report (e.g., redraws)? System should preserve all instances with appropriate sequencing.
+- What happens when a user wants to edit the intermediate representation before FHIR generation? MVP displays for verification only; editing capability could be a future enhancement.
 
 ## Requirements *(mandatory)*
 
@@ -119,6 +157,7 @@ A user needs to verify original lab results or share the official report with a 
 
 - **FR-006**: System MUST extract structured lab data including: analyte names, numeric or qualitative values, units of measurement, reference ranges, collection date, and lab metadata
 - **FR-006a**: System MUST use structured prompting with JSON schema enforcement (via function calling or constrained generation) to ensure LLM outputs strictly conform to the intermediate schema, eliminating post-hoc validation failures
+- **FR-006b**: System MUST display the intermediate JSON representation to the user for manual verification against the original PDF before proceeding to FHIR generation
 - **FR-007**: System MUST use a validated intermediate JSON schema as the contract between parsing and FHIR generation
 - **FR-008**: System MUST validate extracted data against the intermediate schema before FHIR conversion
 - **FR-009**: System MUST handle qualitative values (e.g., "Positive", "Negative") and numeric values with operators (e.g., "<5.0", ">1000")
@@ -134,6 +173,7 @@ A user needs to verify original lab results or share the official report with a 
 #### FHIR Resource Generation
 
 - **FR-015**: System MUST generate valid FHIR R4 Bundle resources containing all converted lab data
+- **FR-015a**: System MUST provide a download button in the web interface to download the generated FHIR Bundle as a JSON file
 - **FR-016**: System MUST create a DocumentReference resource for each uploaded PDF
 - **FR-017**: System MUST create a DiagnosticReport resource representing the lab panel
 - **FR-018**: System MUST create individual Observation resources for each analyte measurement
@@ -150,15 +190,15 @@ A user needs to verify original lab results or share the official report with a 
 - **FR-024**: System MUST support both human and veterinary patient subjects
 - **FR-025**: System MUST maintain clear separation of data between different patients/subjects
 
-#### FHIR Store Integration
+#### FHIR Store Integration (Optional - Priority P5)
 
-- **FR-026**: System MUST submit generated Bundles to a configured FHIR server endpoint
-- **FR-026a**: System MUST support configuration of FHIR server connection details (base URL, authentication method) via environment variables or configuration file
-- **FR-026b**: System MUST support FHIR R4-compliant servers (including Fasten, HAPI FHIR, and other standards-compliant implementations)
-- **FR-026c**: System MUST support both unauthenticated and basic authentication for FHIR server connections
-- **FR-027**: System MUST record submission status (success, pending, failed) for each processed report
-- **FR-028**: System MUST implement retry logic for failed submissions
-- **FR-029**: System MUST track and log all submission attempts for audit purposes
+- **FR-026**: System MAY optionally submit generated Bundles to a configured FHIR server endpoint (automatic integration is a P5 feature; MVP uses manual download/upload workflow)
+- **FR-026a**: System MAY support configuration of FHIR server connection details (base URL, authentication method) via environment variables or configuration file
+- **FR-026b**: System MAY support FHIR R4-compliant servers (including Fasten, HAPI FHIR, and other standards-compliant implementations)
+- **FR-026c**: System MAY support both unauthenticated and basic authentication for FHIR server connections
+- **FR-027**: System MAY record submission status (success, pending, failed) for each automatically processed report
+- **FR-028**: System MAY implement retry logic for failed automatic submissions
+- **FR-029**: System MAY track and log all automatic submission attempts for audit purposes
 
 #### Data Integrity
 
@@ -176,10 +216,13 @@ A user needs to verify original lab results or share the official report with a 
 #### User Feedback and Error Handling
 
 - **FR-037**: System MUST provide immediate feedback to users upon PDF upload, indicating whether the upload was successful or failed
-- **FR-038**: System MUST display processing status (queued, processing, completed, failed) for each uploaded report in the web interface
+- **FR-038**: System MUST display processing status (uploading, parsing, review pending, generating bundle, completed, failed) for each uploaded report in the web interface
+- **FR-038a**: System MUST display the intermediate JSON representation to users for manual verification before FHIR bundle generation
+- **FR-038b**: System MUST provide a confirmation button to proceed with FHIR bundle generation after user verification of intermediate representation
 - **FR-039**: System MUST provide clear, actionable error messages when processing fails, indicating the reason (e.g., "PDF is scanned/image-based", "Missing collection date", "Invalid file format")
 - **FR-040**: System MUST allow users to view the processing history and status of all previously uploaded reports
-- **FR-041**: System MUST notify users when a report is successfully imported to the FHIR store, with a link or reference to view the data
+- **FR-041**: System MUST display a download button when FHIR Bundle generation is complete, allowing users to download the bundle as a JSON file for manual upload to their FHIR store
+- **FR-041a**: System MAY optionally notify users when a report is automatically imported to the FHIR store (P5 feature only), with a link or reference to view the data
 
 ### Key Entities
 
@@ -241,16 +284,18 @@ A user needs to verify original lab results or share the official report with a 
 
 ### Measurable Outcomes
 
-- **SC-001**: A household user can successfully upload a lab PDF via the web interface and see structured results in their FHIR store within 5 minutes of upload
+- **SC-001**: A household user can successfully upload a lab PDF via the web interface, verify the intermediate representation, and download a valid FHIR Bundle within 5 minutes
 - **SC-002**: System correctly extracts and structures at least 95% of lab analytes from standard text-based lab reports using structured LLM prompting
 - **SC-003**: Duplicate uploads of the same PDF are detected and prevented 100% of the time via file hash comparison
-- **SC-004**: Generated FHIR resources pass validation against FHIR R4 specification 100% of the time
-- **SC-005**: System successfully handles lab reports for at least 3 different patients/subjects with complete data separation
-- **SC-006**: Units are normalized consistently - querying for the same analyte across multiple reports returns comparable values 90%+ of the time
-- **SC-007**: Every processed lab report maintains a verifiable link from Observation → DiagnosticReport → DocumentReference → original PDF
+- **SC-004**: Generated FHIR Bundles pass validation against FHIR R4 specification 100% of the time
+- **SC-005**: System successfully handles lab reports for at least 3 different patients/subjects with complete data separation (P4 feature)
+- **SC-006**: Units are normalized consistently - the same analyte across multiple reports uses comparable units 90%+ of the time
+- **SC-007**: Every processed lab report maintains a verifiable link from Observation → DiagnosticReport → DocumentReference → original PDF in the generated bundle
 - **SC-008**: System operates successfully on a small server (2GB RAM, 2 CPU cores) with response time under 2 minutes per report
-- **SC-009**: Failed FHIR submissions are automatically retried with 95%+ eventual success rate for transient failures
-- **SC-010**: 90% of users can successfully complete their first lab upload without documentation or support assistance
-- **SC-011**: Users can create a patient profile and upload their first lab report within 3 minutes using the web interface
-- **SC-012**: Processing status updates are visible in the web interface within 5 seconds of status changes
+- **SC-009**: Automatic FHIR submissions (P5 feature) are retried with 95%+ eventual success rate for transient failures
+- **SC-010**: 90% of users can successfully complete their first lab upload and download without documentation or support assistance
+- **SC-011**: Users can create a patient profile (P4 feature) and upload their first lab report within 3 minutes using the web interface
+- **SC-012**: Processing status updates (including intermediate representation display) are visible in the web interface within 5 seconds of status changes
 - **SC-013**: Error messages clearly indicate the cause of failure in 95%+ of error scenarios, enabling users to take corrective action
+- **SC-014**: Users can successfully verify intermediate representation accuracy by comparing against original PDF in 90%+ of cases
+- **SC-015**: Downloaded FHIR Bundles can be successfully imported to Fasten or other FHIR R4-compliant servers without modification 95%+ of the time

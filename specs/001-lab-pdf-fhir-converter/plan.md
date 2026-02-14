@@ -1,45 +1,70 @@
-# Implementation Plan: [FEATURE]
+# Implementation Plan: Lab PDF to FHIR Converter
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+**Branch**: `001-lab-pdf-fhir-converter` | **Date**: 2026-02-14 | **Spec**: [spec.md](./spec.md)
+**Input**: Feature specification from `/specs/001-lab-pdf-fhir-converter/spec.md`
 
-**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
+**Note**: This plan implements Python + PostgreSQL backend for Lab2FHIR converter.
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+Build a self-hosted pipeline that converts structured laboratory PDF reports into FHIR-compliant clinical resources for personal and household health record management. The system will use Python 3.11+ with FastAPI for the web interface, PostgreSQL for persistence, and structured LLM prompting for PDF extraction. An intermediate JSON schema will decouple extraction from FHIR generation to ensure validation and deterministic transformations.
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
-
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: Python 3.11+
+**Primary Dependencies**: FastAPI (web framework), SQLAlchemy (ORM), Pydantic (validation), PyPDF2 or pdfplumber (PDF text extraction), FHIR.resources (FHIR R4 models), httpx (HTTP client for LLM APIs)
+**Storage**: PostgreSQL 14+ (relational DB for pipeline state, patient profiles, intermediate representations, audit logs)
+**Testing**: pytest (unit/integration tests), pytest-asyncio (async tests), pytest-postgresql (test DB fixtures)
+**Target Platform**: Linux server (Docker container for self-hosted deployment)
+**Project Type**: Web application (FastAPI backend + minimal web UI for upload/review)
+**Performance Goals**: Process single PDF in <30 seconds (including LLM extraction), support <10 concurrent uploads
+**Constraints**: Self-hosted operation (no mandatory cloud services), configurable LLM providers via environment variables, PHI-safe (no external data transmission except to configured services)
+**Scale/Scope**: Household scale (5-10 patient profiles, 100s of lab reports per year, <1GB storage per patient)
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- Deterministic behavior: identifies all transformations that must remain stable for identical
-  inputs (normalization, deduplication, bundle generation).
-- Intermediate schema enforcement: confirms strict validation boundary before FHIR conversion and
-  prohibits direct model-to-FHIR generation.
-- PDF traceability: preserves source PDF and provenance linkage in generated resources.
-- PHI-safe/self-hosted operation: avoids mandatory vendor lock-in and keeps sensitive config
-  externalized via environment variables.
-- Minimal infrastructure: justifies any new service/dependency against project constraints.
-- Validation evidence: defines required tests/lint commands and where results will be recorded.
+**✓ Deterministic behavior**: 
+- PDF text extraction: Deterministic (same PDF → same text output)
+- LLM extraction: Non-deterministic at extraction, but validated through strict intermediate schema
+- Normalization: Deterministic (UCUM unit normalization, analyte name canonicalization)
+- Deduplication keys: Deterministic (based on subject + collection date + analyte + value + unit)
+- FHIR generation: Deterministic (same intermediate JSON → same FHIR Bundle)
+
+**✓ Intermediate schema enforcement**: 
+- Strict JSON Schema defined for intermediate representation
+- LLM outputs structured JSON matching intermediate schema
+- Schema validation occurs immediately after LLM extraction
+- Schema validation occurs again before FHIR conversion
+- Direct LLM-to-FHIR prohibited by architecture
+
+**✓ PDF preservation & FHIR traceability**: 
+- Source PDFs stored in PostgreSQL (BYTEA column) with SHA-256 hash
+- DocumentReference resource created for each PDF
+- DiagnosticReport links to DocumentReference
+- Each Observation includes deterministic identifier and provenance reference
+- Audit log tracks: upload → extraction → validation → FHIR generation
+
+**✓ PHI-safe, self-hosted operation**: 
+- Configurable LLM provider via environment variables (OPENAI_API_KEY, ANTHROPIC_API_KEY, or local endpoint)
+- PostgreSQL database runs locally (Docker Compose)
+- No mandatory external services beyond user-configured LLM
+- All sensitive configuration externalized (DATABASE_URL, LLM config, FHIR endpoints)
+
+**✓ Minimal infrastructure**: 
+- Python + PostgreSQL (no additional services for MVP)
+- FastAPI web server (single process, can scale horizontally if needed)
+- Optional FHIR server integration (not mandatory, configured via env)
+- Replaceable LLM provider through configuration
+
+**✓ Validation evidence**: 
+- Unit tests: pytest for models, services, FHIR generation
+- Integration tests: pytest with test PostgreSQL database
+- Contract tests: JSON Schema validation, FHIR Bundle validation
+- Linting: ruff (formatter + linter)
+- Type checking: mypy
+- Results recorded in CI logs and local test output
 
 ## Project Structure
 
@@ -56,57 +81,41 @@ specs/[###-feature]/
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
-
-tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
 backend/
 ├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
+│   ├── models/          # SQLAlchemy models (Patient, Upload, IntermediateRep, FHIRBundle)
+│   ├── schemas/         # Pydantic schemas (intermediate JSON schema, API request/response)
+│   ├── services/        # Business logic (pdf_extractor, llm_parser, normalizer, fhir_generator)
+│   ├── api/             # FastAPI routes (upload, review, generate, download)
+│   ├── db/              # Database connection, migrations (Alembic)
+│   └── config.py        # Configuration (env vars, LLM provider settings)
+├── tests/
+│   ├── contract/        # JSON Schema validation, FHIR Bundle validation
+│   ├── integration/     # End-to-end pipeline tests with test DB
+│   └── unit/            # Service and model unit tests
+├── migrations/          # Alembic database migrations
+├── requirements.txt     # Python dependencies
+├── pyproject.toml       # Project metadata, tool configuration (ruff, mypy)
+└── Dockerfile           # Container build
 
 frontend/
 ├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
+│   ├── components/      # React/HTML components (UploadForm, IntermediateReview, BundleDownload)
+│   ├── pages/           # Main pages (Upload, Review, History)
+│   └── services/        # API client for backend
+├── tests/
+└── package.json
 
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+docker-compose.yml       # PostgreSQL + backend + frontend services
+README.md                # Setup and deployment instructions
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Web application with backend/frontend split. Backend handles all PDF processing, LLM interaction, database persistence, and FHIR generation. Frontend provides minimal web UI for upload, review, and download. This structure supports self-hosted deployment via Docker Compose and allows frontend replacement without affecting core pipeline logic.
 
 ## Complexity Tracking
 
 > **Fill ONLY if Constitution Check has violations that must be justified**
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+No violations. All constitutional principles are satisfied by the proposed architecture.

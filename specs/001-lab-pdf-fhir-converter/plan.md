@@ -119,3 +119,63 @@ README.md                # Setup and deployment instructions
 > **Fill ONLY if Constitution Check has violations that must be justified**
 
 No violations. All constitutional principles are satisfied by the proposed architecture.
+
+## Post-Design Constitution Re-Evaluation
+
+*Re-check after Phase 1 design artifacts (data-model.md, contracts/, quickstart.md) are complete.*
+
+### Verified Compliance
+
+**✓ Deterministic behavior - VERIFIED**:
+- Data model includes SHA-256 hash field for deduplication (Upload.pdf_hash)
+- Intermediate representation has deterministic_id field computed from content
+- State machine defined with clear transitions (uploaded → extracting → parsing → review_pending → generating_fhir → completed)
+- FHIR generation service specified to produce identical bundles from identical intermediate JSON
+
+**✓ Intermediate schema enforcement - VERIFIED**:
+- JSON Schema defined at `contracts/intermediate-schema.json` (JSON Schema Draft 2020-12)
+- Schema includes strict validation rules for all required fields
+- Data model separates IntermediateRepresentation entity from FHIRBundle entity
+- API contract enforces validation at POST /api/uploads/{id}/intermediate and PUT endpoints
+- No direct LLM-to-FHIR path exists in API design
+
+**✓ PDF preservation & FHIR traceability - VERIFIED**:
+- Upload.pdf_data field (BYTEA) stores original PDF bytes
+- Upload.pdf_hash field (SHA-256) enables integrity verification
+- ProcessingLog entity tracks all state transitions with timestamps
+- API contract includes DocumentReference in FHIR Bundle response schema
+- Quickstart demonstrates provenance tracking in generated bundles
+
+**✓ PHI-safe, self-hosted operation - VERIFIED**:
+- Environment variables defined in quickstart: DATABASE_URL, OPENAI_API_KEY, LLM_PROVIDER
+- Docker Compose configuration keeps all services local (PostgreSQL + backend + frontend)
+- No mandatory external services (LLM provider is configurable)
+- API contract does not include any cloud-dependent endpoints
+
+**✓ Minimal infrastructure - VERIFIED**:
+- Technology stack limited to: Python, PostgreSQL, FastAPI
+- No message queues, caching layers, or additional services for MVP
+- Optional FHIR server integration documented but not required
+- Docker Compose configuration includes only 3 services: postgres, backend, frontend
+
+**✓ Validation evidence - VERIFIED**:
+- Quickstart includes pytest setup with examples
+- Contract tests specified for JSON Schema validation (intermediate-schema.json)
+- API contract includes validation error responses (400/422)
+- Development workflow documented: `pytest`, `ruff check .`, `mypy`
+
+### Phase 1 Design Artifacts Summary
+
+✅ **research.md**: Technology choices documented with rationale (pdfplumber, OpenAI structured outputs, fhir.resources, PostgreSQL JSONB)
+
+✅ **data-model.md**: 5 entities defined (Patient, Upload, IntermediateRepresentation, FHIRBundle, ProcessingLog) with SQLAlchemy models, Pydantic schemas, state transitions, and validation rules
+
+✅ **contracts/**: OpenAPI 3.0 specification (api.yaml), intermediate JSON schema (intermediate-schema.json), examples, and Postman collection
+
+✅ **quickstart.md**: Complete setup guide (10-minute setup goal), Docker deployment, configuration reference, troubleshooting
+
+✅ **copilot-instructions.md**: Agent context updated with Python 3.11+, FastAPI, SQLAlchemy, PostgreSQL technologies
+
+### Remaining Work
+
+Phase 2 (Implementation) will be handled by the `/speckit.tasks` command to generate `tasks.md`.

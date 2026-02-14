@@ -1,0 +1,494 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lab2fhir.local/schemas/intermediate-representation/v1.0.0",
+  "title": "Lab Report Intermediate Representation",
+  "description": "Validated JSON schema for intermediate representation of laboratory PDF reports. This serves as the contract between LLM parsing and FHIR generation.",
+  "type": "object",
+  "required": [
+    "lab_metadata",
+    "collection_date",
+    "analytes"
+  ],
+  "properties": {
+    "lab_metadata": {
+      "type": "object",
+      "description": "Laboratory facility information",
+      "properties": {
+        "lab_name": {
+          "type": ["string", "null"],
+          "description": "Name of the laboratory facility",
+          "examples": ["Quest Diagnostics", "LabCorp", "Mayo Clinic Laboratories"]
+        },
+        "lab_address": {
+          "type": ["string", "null"],
+          "description": "Physical address of the laboratory",
+          "examples": ["1234 Medical Center Dr, San Francisco, CA 94143"]
+        },
+        "lab_phone": {
+          "type": ["string", "null"],
+          "description": "Laboratory contact phone number",
+          "pattern": "^[+]?[(]?[0-9]{1,4}[)]?[-\\s\\.]?[(]?[0-9]{1,4}[)]?[-\\s\\.]?[0-9]{1,9}$",
+          "examples": ["(415) 555-0100", "+1-800-555-0199"]
+        },
+        "clia_number": {
+          "type": ["string", "null"],
+          "description": "Clinical Laboratory Improvement Amendments (CLIA) identifier",
+          "pattern": "^[0-9]{2}[A-Z][0-9]{7}$",
+          "examples": ["05D0987654", "23D1234567"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "report_id": {
+      "type": ["string", "null"],
+      "description": "Unique report identifier assigned by the laboratory",
+      "maxLength": 100,
+      "examples": ["RPT-2024-001234", "LAB-20240115-5678"]
+    },
+    "accession_number": {
+      "type": ["string", "null"],
+      "description": "Laboratory accession/requisition number",
+      "maxLength": 100,
+      "examples": ["ACC-20240115-5678", "REQ-2024-001234"]
+    },
+    "collection_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Specimen collection date in ISO 8601 format (YYYY-MM-DD)",
+      "examples": ["2024-01-15"]
+    },
+    "result_date": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "Date when test results were produced (if different from collection date)",
+      "examples": ["2024-01-15", "2024-01-16"]
+    },
+    "report_date": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "Date when the report was issued/finalized",
+      "examples": ["2024-01-16", "2024-01-17"]
+    },
+    "analytes": {
+      "type": "array",
+      "description": "List of individual laboratory test results",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/analyteResult"
+      }
+    },
+    "specimen_type": {
+      "type": ["string", "null"],
+      "description": "Type of specimen collected",
+      "maxLength": 100,
+      "examples": ["Blood", "Serum", "Plasma", "Urine", "Saliva", "Whole Blood"]
+    },
+    "specimen_id": {
+      "type": ["string", "null"],
+      "description": "Unique specimen identifier",
+      "maxLength": 100,
+      "examples": ["SPEC-20240115-001", "S-2024-001234"]
+    },
+    "ordering_provider": {
+      "type": ["string", "null"],
+      "description": "Name of the healthcare provider who ordered the tests",
+      "maxLength": 255,
+      "examples": ["Dr. Jane Smith", "Smith, Jane MD", "Jane Smith, MD"]
+    },
+    "clinical_info": {
+      "type": ["string", "null"],
+      "description": "Clinical information, diagnosis codes, or reason for testing",
+      "maxLength": 1000,
+      "examples": [
+        "Routine metabolic panel",
+        "Follow-up for diabetes management",
+        "Annual physical examination"
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "analyteResult": {
+      "type": "object",
+      "description": "Individual laboratory test result with value, unit, and reference range",
+      "required": [
+        "analyte_name",
+        "value",
+        "value_type"
+      ],
+      "properties": {
+        "analyte_name": {
+          "type": "string",
+          "description": "Name of the test/analyte as it appears in the report",
+          "minLength": 1,
+          "maxLength": 255,
+          "examples": [
+            "Glucose",
+            "Hemoglobin A1c",
+            "Total Cholesterol",
+            "TSH",
+            "Vitamin D, 25-Hydroxy"
+          ]
+        },
+        "analyte_code": {
+          "type": ["string", "null"],
+          "description": "LOINC code or laboratory-specific code for the analyte",
+          "maxLength": 50,
+          "examples": [
+            "2345-7",
+            "4548-4",
+            "2093-3",
+            "3016-3"
+          ]
+        },
+        "value": {
+          "type": "string",
+          "description": "Result value as a string (numeric or qualitative). For operator values like '>100', use operator field.",
+          "minLength": 1,
+          "maxLength": 100,
+          "examples": [
+            "95",
+            "5.6",
+            "180.5",
+            "Negative",
+            "Positive",
+            "Not detected",
+            "100"
+          ]
+        },
+        "value_type": {
+          "type": "string",
+          "description": "Type of value reported",
+          "enum": [
+            "numeric",
+            "qualitative",
+            "operator"
+          ],
+          "default": "numeric",
+          "examples": ["numeric", "qualitative", "operator"]
+        },
+        "operator": {
+          "type": ["string", "null"],
+          "description": "Comparison operator for results like '<5' or '>1000'",
+          "enum": [
+            null,
+            "<",
+            ">",
+            "<=",
+            ">="
+          ],
+          "examples": ["<", ">", null]
+        },
+        "unit": {
+          "type": ["string", "null"],
+          "description": "Unit of measurement for the value",
+          "maxLength": 50,
+          "examples": [
+            "mg/dL",
+            "mmol/L",
+            "%",
+            "ng/mL",
+            "IU/L",
+            "g/dL",
+            "cells/uL"
+          ]
+        },
+        "reference_range": {
+          "type": ["string", "null"],
+          "description": "Reference range as stated in the report",
+          "maxLength": 100,
+          "examples": [
+            "70-100",
+            "<5.7",
+            "0.5-5.0",
+            "135-145",
+            "Male: 13.5-17.5, Female: 12.0-15.5"
+          ]
+        },
+        "flag": {
+          "type": ["string", "null"],
+          "description": "Result flag indicating abnormal values",
+          "enum": [
+            null,
+            "H",
+            "L",
+            "A",
+            "C",
+            "HH",
+            "LL"
+          ],
+          "examples": ["H", "L", "A", "C", null]
+        },
+        "notes": {
+          "type": ["string", "null"],
+          "description": "Additional notes, comments, or footnotes about the result",
+          "maxLength": 1000,
+          "examples": [
+            "Fasting sample required",
+            "Result confirmed by repeat testing",
+            "Critical value - physician notified"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "value_type": {
+                "const": "numeric"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "unit": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "value_type": {
+                "const": "operator"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operator": {
+                "type": "string",
+                "enum": ["<", ">", "<=", ">="]
+              }
+            },
+            "required": ["operator"]
+          }
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "lab_metadata": {
+        "lab_name": "Quest Diagnostics",
+        "lab_address": "1234 Medical Center Dr, San Francisco, CA 94143",
+        "lab_phone": "(415) 555-0100",
+        "clia_number": "05D0987654"
+      },
+      "report_id": "RPT-2024-001234",
+      "accession_number": "ACC-20240115-5678",
+      "collection_date": "2024-01-15",
+      "result_date": "2024-01-15",
+      "report_date": "2024-01-16",
+      "analytes": [
+        {
+          "analyte_name": "Glucose",
+          "analyte_code": "2345-7",
+          "value": "95",
+          "value_type": "numeric",
+          "operator": null,
+          "unit": "mg/dL",
+          "reference_range": "70-100",
+          "flag": null,
+          "notes": null
+        },
+        {
+          "analyte_name": "Hemoglobin A1c",
+          "analyte_code": "4548-4",
+          "value": "5.6",
+          "value_type": "numeric",
+          "operator": null,
+          "unit": "%",
+          "reference_range": "<5.7",
+          "flag": null,
+          "notes": null
+        },
+        {
+          "analyte_name": "Total Cholesterol",
+          "analyte_code": "2093-3",
+          "value": "185",
+          "value_type": "numeric",
+          "operator": null,
+          "unit": "mg/dL",
+          "reference_range": "<200",
+          "flag": null,
+          "notes": "Desirable level"
+        },
+        {
+          "analyte_name": "HDL Cholesterol",
+          "analyte_code": "2085-9",
+          "value": "55",
+          "value_type": "numeric",
+          "operator": null,
+          "unit": "mg/dL",
+          "reference_range": ">40",
+          "flag": null,
+          "notes": null
+        },
+        {
+          "analyte_name": "LDL Cholesterol",
+          "analyte_code": "13457-7",
+          "value": "110",
+          "value_type": "numeric",
+          "operator": null,
+          "unit": "mg/dL",
+          "reference_range": "<100",
+          "flag": "H",
+          "notes": null
+        },
+        {
+          "analyte_name": "Triglycerides",
+          "analyte_code": "2571-8",
+          "value": "100",
+          "value_type": "numeric",
+          "operator": null,
+          "unit": "mg/dL",
+          "reference_range": "<150",
+          "flag": null,
+          "notes": null
+        }
+      ],
+      "specimen_type": "Blood",
+      "specimen_id": "SPEC-20240115-001",
+      "ordering_provider": "Dr. Jane Smith",
+      "clinical_info": "Routine metabolic panel - annual physical"
+    },
+    {
+      "lab_metadata": {
+        "lab_name": "LabCorp",
+        "lab_address": "5678 Healthcare Blvd, Boston, MA 02115",
+        "lab_phone": "+1-617-555-0200",
+        "clia_number": "22D9876543"
+      },
+      "report_id": "LC-2024-987654",
+      "accession_number": null,
+      "collection_date": "2024-02-01",
+      "result_date": "2024-02-02",
+      "report_date": "2024-02-03",
+      "analytes": [
+        {
+          "analyte_name": "TSH",
+          "analyte_code": "3016-3",
+          "value": "2.5",
+          "value_type": "numeric",
+          "operator": null,
+          "unit": "mIU/L",
+          "reference_range": "0.4-4.0",
+          "flag": null,
+          "notes": null
+        },
+        {
+          "analyte_name": "Free T4",
+          "analyte_code": "3024-7",
+          "value": "1.2",
+          "value_type": "numeric",
+          "operator": null,
+          "unit": "ng/dL",
+          "reference_range": "0.8-1.8",
+          "flag": null,
+          "notes": null
+        },
+        {
+          "analyte_name": "Vitamin D, 25-Hydroxy",
+          "analyte_code": "1989-3",
+          "value": "28",
+          "value_type": "numeric",
+          "operator": null,
+          "unit": "ng/mL",
+          "reference_range": "30-100",
+          "flag": "L",
+          "notes": "Consider supplementation"
+        }
+      ],
+      "specimen_type": "Serum",
+      "specimen_id": "S-2024-001234",
+      "ordering_provider": "Smith, Robert MD",
+      "clinical_info": "Follow-up thyroid function tests"
+    },
+    {
+      "lab_metadata": {
+        "lab_name": "Community Health Lab",
+        "lab_address": null,
+        "lab_phone": null,
+        "clia_number": null
+      },
+      "report_id": null,
+      "accession_number": "CHL-2024-12345",
+      "collection_date": "2024-03-10",
+      "result_date": null,
+      "report_date": "2024-03-11",
+      "analytes": [
+        {
+          "analyte_name": "COVID-19 RNA",
+          "analyte_code": null,
+          "value": "Not detected",
+          "value_type": "qualitative",
+          "operator": null,
+          "unit": null,
+          "reference_range": "Not detected",
+          "flag": null,
+          "notes": "PCR test - negative result"
+        }
+      ],
+      "specimen_type": "Nasopharyngeal swab",
+      "specimen_id": null,
+      "ordering_provider": null,
+      "clinical_info": "COVID-19 screening"
+    },
+    {
+      "lab_metadata": {
+        "lab_name": "Reference Laboratory",
+        "lab_address": "789 Science Park, Seattle, WA 98101",
+        "lab_phone": "(206) 555-0300",
+        "clia_number": "53D5432109"
+      },
+      "report_id": "RL-2024-555",
+      "accession_number": "A-2024-555-001",
+      "collection_date": "2024-04-20",
+      "result_date": "2024-04-21",
+      "report_date": "2024-04-21",
+      "analytes": [
+        {
+          "analyte_name": "Creatinine",
+          "analyte_code": "2160-0",
+          "value": "0.9",
+          "value_type": "numeric",
+          "operator": null,
+          "unit": "mg/dL",
+          "reference_range": "0.6-1.2",
+          "flag": null,
+          "notes": null
+        },
+        {
+          "analyte_name": "Albumin",
+          "analyte_code": "1751-7",
+          "value": "4.2",
+          "value_type": "numeric",
+          "operator": null,
+          "unit": "g/dL",
+          "reference_range": "3.5-5.0",
+          "flag": null,
+          "notes": null
+        },
+        {
+          "analyte_name": "Bilirubin, Total",
+          "analyte_code": "1975-2",
+          "value": "5",
+          "value_type": "operator",
+          "operator": "<",
+          "unit": "mg/dL",
+          "reference_range": "0.1-1.2",
+          "flag": null,
+          "notes": "Below detection limit"
+        }
+      ],
+      "specimen_type": "Plasma",
+      "specimen_id": "P-2024-04-20-001",
+      "ordering_provider": "Dr. Emily Johnson",
+      "clinical_info": "Renal function panel"
+    }
+  ]
+}

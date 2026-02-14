@@ -1,0 +1,310 @@
+{
+  "info": {
+    "name": "Lab2FHIR API",
+    "description": "API collection for Lab2FHIR - Laboratory PDF to FHIR converter",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "patient_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "upload_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Patients",
+      "item": [
+        {
+          "name": "Create Patient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('patient_id', response.id);",
+                  "    pm.test('Patient created successfully', () => {",
+                  "        pm.expect(response.id).to.be.a('string');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"display_name\": \"John Doe\",\n  \"patient_type\": \"human\",\n  \"notes\": \"Test patient for API testing\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/patients",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients"]
+            }
+          }
+        },
+        {
+          "name": "List Patients",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/patients?limit=50&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Patient Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/patients/{{patient_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", "{{patient_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Uploads",
+      "item": [
+        {
+          "name": "Upload PDF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('upload_id', response.id);",
+                  "    pm.test('Upload created successfully', () => {",
+                  "        pm.expect(response.id).to.be.a('string');",
+                  "        pm.expect(response.status).to.equal('uploaded');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/path/to/lab-report.pdf"
+                },
+                {
+                  "key": "patient_id",
+                  "value": "{{patient_id}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/uploads",
+              "host": ["{{base_url}}"],
+              "path": ["api", "uploads"]
+            }
+          }
+        },
+        {
+          "name": "Get Upload Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/uploads/{{upload_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "uploads", "{{upload_id}}"]
+            }
+          }
+        },
+        {
+          "name": "List Uploads",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/uploads?limit=50&offset=0&sort=uploaded_at_desc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "uploads"],
+              "query": [
+                {
+                  "key": "patient_id",
+                  "value": "{{patient_id}}",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "completed",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "sort",
+                  "value": "uploaded_at_desc"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Intermediate Representation",
+      "item": [
+        {
+          "name": "Get Intermediate",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/uploads/{{upload_id}}/intermediate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "uploads", "{{upload_id}}", "intermediate"]
+            }
+          }
+        },
+        {
+          "name": "Update Intermediate",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {\n    \"lab_metadata\": {\n      \"lab_name\": \"Quest Diagnostics\",\n      \"lab_address\": \"1234 Medical Center Dr, San Francisco, CA 94143\",\n      \"lab_phone\": \"(415) 555-0100\",\n      \"clia_number\": \"05D0987654\"\n    },\n    \"report_id\": \"RPT-2024-001234\",\n    \"accession_number\": \"ACC-20240115-5678\",\n    \"collection_date\": \"2024-01-15\",\n    \"result_date\": \"2024-01-15\",\n    \"report_date\": \"2024-01-16\",\n    \"analytes\": [\n      {\n        \"analyte_name\": \"Glucose\",\n        \"analyte_code\": \"2345-7\",\n        \"value\": \"85\",\n        \"value_type\": \"numeric\",\n        \"operator\": null,\n        \"unit\": \"mg/dL\",\n        \"reference_range\": \"70-100\",\n        \"flag\": null,\n        \"notes\": \"Corrected from misread '95'\"\n      }\n    ],\n    \"specimen_type\": \"Blood\",\n    \"specimen_id\": \"SPEC-20240115-001\",\n    \"ordering_provider\": \"Dr. Jane Smith\",\n    \"clinical_info\": \"Routine metabolic panel\"\n  },\n  \"edit_summary\": \"Corrected glucose value from 95 to 85 (OCR misread)\",\n  \"edited_by\": \"user@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/uploads/{{upload_id}}/intermediate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "uploads", "{{upload_id}}", "intermediate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "FHIR Bundle",
+      "item": [
+        {
+          "name": "Generate FHIR Bundle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"regenerate\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/uploads/{{upload_id}}/generate-fhir",
+              "host": ["{{base_url}}"],
+              "path": ["api", "uploads", "{{upload_id}}", "generate-fhir"]
+            }
+          }
+        },
+        {
+          "name": "Download FHIR Bundle (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/uploads/{{upload_id}}/bundle?format=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "uploads", "{{upload_id}}", "bundle"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "json"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Download FHIR Bundle (XML)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+xml"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/uploads/{{upload_id}}/bundle?format=xml",
+              "host": ["{{base_url}}"],
+              "path": ["api", "uploads", "{{upload_id}}", "bundle"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "xml"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

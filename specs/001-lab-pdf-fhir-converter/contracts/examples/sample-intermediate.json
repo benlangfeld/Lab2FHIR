@@ -1,0 +1,85 @@
+{
+  "lab_metadata": {
+    "lab_name": "Quest Diagnostics",
+    "lab_address": "1234 Medical Center Dr, San Francisco, CA 94143",
+    "lab_phone": "(415) 555-0100",
+    "clia_number": "05D0987654"
+  },
+  "report_id": "RPT-2024-001234",
+  "accession_number": "ACC-20240115-5678",
+  "collection_date": "2024-01-15",
+  "result_date": "2024-01-15",
+  "report_date": "2024-01-16",
+  "analytes": [
+    {
+      "analyte_name": "Glucose",
+      "analyte_code": "2345-7",
+      "value": "95",
+      "value_type": "numeric",
+      "operator": null,
+      "unit": "mg/dL",
+      "reference_range": "70-100",
+      "flag": null,
+      "notes": null
+    },
+    {
+      "analyte_name": "Hemoglobin A1c",
+      "analyte_code": "4548-4",
+      "value": "5.6",
+      "value_type": "numeric",
+      "operator": null,
+      "unit": "%",
+      "reference_range": "<5.7",
+      "flag": null,
+      "notes": null
+    },
+    {
+      "analyte_name": "Total Cholesterol",
+      "analyte_code": "2093-3",
+      "value": "185",
+      "value_type": "numeric",
+      "operator": null,
+      "unit": "mg/dL",
+      "reference_range": "<200",
+      "flag": null,
+      "notes": "Desirable level"
+    },
+    {
+      "analyte_name": "HDL Cholesterol",
+      "analyte_code": "2085-9",
+      "value": "55",
+      "value_type": "numeric",
+      "operator": null,
+      "unit": "mg/dL",
+      "reference_range": ">40",
+      "flag": null,
+      "notes": null
+    },
+    {
+      "analyte_name": "LDL Cholesterol",
+      "analyte_code": "13457-7",
+      "value": "110",
+      "value_type": "numeric",
+      "operator": null,
+      "unit": "mg/dL",
+      "reference_range": "<100",
+      "flag": "H",
+      "notes": null
+    },
+    {
+      "analyte_name": "Triglycerides",
+      "analyte_code": "2571-8",
+      "value": "100",
+      "value_type": "numeric",
+      "operator": null,
+      "unit": "mg/dL",
+      "reference_range": "<150",
+      "flag": null,
+      "notes": null
+    }
+  ],
+  "specimen_type": "Blood",
+  "specimen_id": "SPEC-20240115-001",
+  "ordering_provider": "Dr. Jane Smith",
+  "clinical_info": "Routine metabolic panel - annual physical"
+}

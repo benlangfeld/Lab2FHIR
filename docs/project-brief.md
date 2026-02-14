@@ -17,8 +17,8 @@ The system is designed for:
 
 Lab2FHIR acts as an ingestion layer between:
 
-- Unstructured legacy lab PDFs  
-and  
+- Unstructured legacy lab PDFs
+and
 - A FHIR-based clinical data store (e.g., Fasten)
 
 ---

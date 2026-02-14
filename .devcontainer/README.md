@@ -22,13 +22,8 @@ A toolkit for spec-driven development that helps you build software by focusing 
 
 **Usage:**
 ```bash
-# Initialize a new spec-driven project
-specify init my-project
-
-# Check your environment
 specify check
 
-# Get help
 specify --help
 ```
 

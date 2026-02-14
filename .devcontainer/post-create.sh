@@ -7,33 +7,18 @@ echo "🚀 Setting up Lab2FHIR development environment..."
 # Install spec-kit CLI
 echo "📦 Installing spec-kit CLI..."
 
-# Check if uv is already installed
-if command -v uv &> /dev/null; then
-    echo "✅ uv already installed"
-else
-    # Install uv if not available
+# Install uv if not available
+if ! command -v uv &> /dev/null; then
     echo "📦 Installing uv (Python package manager)..."
-    if curl -LsSf https://astral.sh/uv/install.sh | sh; then
-        export PATH="$HOME/.local/bin:$PATH"
-        echo "✅ uv installed"
-    else
-        echo "⚠️  Could not install uv automatically"
-        echo "    In Codespaces, uv will be installed on first use"
-    fi
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.local/bin:$PATH"
 fi
 
-# Install spec-kit via uv if available
-if command -v uv &> /dev/null; then
-    echo "📦 Installing spec-kit via uv..."
-    if uv tool install specify-cli --from git+https://github.com/github/spec-kit.git 2>&1 | grep -E "(Installed|installed)"; then
-        export PATH="$HOME/.local/bin:$PATH"
-        echo "✅ spec-kit CLI installed"
-    else
-        echo "ℹ️  spec-kit installation queued for first use"
-    fi
-else
-    echo "ℹ️  spec-kit will be installed on first Codespace launch"
-fi
+# Install spec-kit via uv
+echo "📦 Installing spec-kit via uv..."
+uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
+export PATH="$HOME/.local/bin:$PATH"
+echo "✅ spec-kit CLI installed"
 
 # Verify installations
 echo ""
@@ -42,12 +27,7 @@ echo ""
 echo "Available tools:"
 echo "  - gh (GitHub CLI): $(gh --version 2>/dev/null | head -1 || echo 'installed')"
 echo "  - copilot (Copilot CLI): $(copilot --version 2>&1 | head -1 || echo 'run \"gh auth login\" to enable')"
-
-if command -v specify &> /dev/null; then
-    echo "  - specify (spec-kit): $(specify --version 2>/dev/null | head -1 || echo 'installed')"
-else
-    echo "  - specify (spec-kit): will be available after first Codespace launch"
-fi
+echo "  - specify (spec-kit): $(specify --version 2>/dev/null | head -1 || echo 'installed')"
 echo ""
 echo "🎉 Your codespace is ready!"
 echo ""

@@ -25,25 +25,25 @@ A household health manager uploads a PDF lab report from their personal medical 
 
 ---
 
-### User Story 2 - Handle Multiple Patients (Priority: P2)
+### User Story 2 - Correct Mistaken Parsing (Priority: P2)
 
-A household with multiple people (partner, children) and pets creates patient profiles for each member, then uploads lab reports for different subjects and can distinguish between each person's or pet's results in their consolidated health records.
+A user reviews the intermediate JSON representation and notices the LLM incorrectly extracted some values (e.g., misread "8.5" as "85", swapped units, missed a test). The user can manually edit the intermediate representation to correct the mistakes before generating the FHIR Bundle.
 
-**Why this priority**: Multi-patient support is essential for household-scale usage but can be tested after basic single-report processing works. This expands the system's utility without changing core processing logic.
+**Why this priority**: LLM parsing won't be 100% accurate. Allowing users to correct mistakes ensures data quality and prevents the need to re-upload and re-process PDFs. This is critical for the system to be trusted with PHI data.
 
-**Independent Test**: Can be tested by first creating 2-3 patient profiles through the web interface (e.g., "John Doe" [human], "Jane Doe" [human], "Fluffy the Cat" [veterinary]), then uploading lab reports for each, and verifying that each report's FHIR resources correctly reference the appropriate Patient resource, and that querying results by patient returns only that patient's data.
+**Independent Test**: Can be tested by uploading a lab PDF, reviewing the intermediate representation, identifying a parsing error, editing the intermediate JSON to correct it, confirming the edits, and verifying that the generated FHIR Bundle reflects the corrected values rather than the original mistaken extraction.
 
 **Acceptance Scenarios**:
 
-1. **Given** no patient profiles exist, **When** a user creates a new patient profile via the web interface specifying name and type (human/veterinary), **Then** the system generates a unique patient identifier and stores the profile
-2. **Given** multiple patient profiles exist, **When** a user uploads a lab report, **Then** the web interface displays a dropdown to select the appropriate patient profile
-3. **Given** lab reports exist for multiple household members, **When** a report is uploaded for a specific patient, **Then** the system correctly associates the lab results with the selected patient identifier in the generated FHIR resources
-4. **Given** lab reports for both humans and pets, **When** reports are processed, **Then** veterinary lab reports are handled correctly with appropriate subject references
-5. **Given** multiple patients in the system, **When** querying the FHIR store for one patient's lab results, **Then** only that patient's observations are returned
+1. **Given** the intermediate representation is displayed with a parsing error, **When** the user clicks an "Edit" button, **Then** the system enables editing mode for the intermediate JSON
+2. **Given** editing mode is enabled, **When** the user corrects an incorrectly parsed value, **Then** the system validates the edit against the intermediate schema and highlights any validation errors
+3. **Given** the user has made corrections to the intermediate representation, **When** they save the edits, **Then** the system updates the intermediate representation and allows proceeding to FHIR generation
+4. **Given** corrections have been made, **When** the FHIR Bundle is generated, **Then** it reflects the corrected values from the edited intermediate representation
+5. **Given** corrections have been made, **When** viewing processing history, **Then** the system logs that manual corrections were applied and preserves both original and corrected representations for audit
 
 ---
 
-### User Story 2 - Prevent Duplicate Imports (Priority: P2)
+### User Story 3 - Prevent Duplicate Imports (Priority: P2)
 
 A user accidentally uploads the same lab report PDF twice and the system recognizes the duplicate, preventing redundant data entries and duplicate FHIR Bundle generation while still preserving both upload attempts for audit purposes.
 
@@ -59,7 +59,7 @@ A user accidentally uploads the same lab report PDF twice and the system recogni
 
 ---
 
-### User Story 3 - Normalize Units Across Time (Priority: P3)
+### User Story 3 - Prevent Duplicate Imports (Priority: P2)
 
 A user uploads lab reports from different labs taken over several years with varying unit systems (mg/dL vs mmol/L) and the system normalizes units to consistent standards, enabling accurate longitudinal comparisons.
 
@@ -75,7 +75,7 @@ A user uploads lab reports from different labs taken over several years with var
 
 ---
 
-### User Story 4 - Preserve Original Documents (Priority: P3)
+### User Story 4 - Normalize Units Across Time (Priority: P3)
 
 A user needs to verify original lab results or share the official report with a healthcare provider and can retrieve the original PDF document that was uploaded, linked to all derived FHIR resources.
 
@@ -91,7 +91,25 @@ A user needs to verify original lab results or share the official report with a 
 
 ---
 
-### User Story 5 - Handle Multiple Patients (Priority: P4)
+### User Story 5 - Re-generate FHIR Bundle from Intermediate Representation (Priority: P4)
+
+A user has previously uploaded and processed a lab report, creating an intermediate representation. Later, they want to regenerate the FHIR Bundle (e.g., after FHIR schema updates or to apply different settings) without re-uploading and re-parsing the original PDF.
+
+**Why this priority**: This capability improves efficiency and flexibility by allowing FHIR Bundle regeneration without LLM reprocessing. However, it's not essential for MVP since users can re-upload PDFs if needed.
+
+**Independent Test**: Can be tested by processing a lab PDF to create an intermediate representation, then later accessing that stored intermediate representation and triggering FHIR Bundle regeneration without re-parsing the PDF. Verify the new bundle is generated from the stored intermediate data and matches expected format.
+
+**Acceptance Scenarios**:
+
+1. **Given** a lab report has been previously processed with intermediate representation stored, **When** the user views the processing history, **Then** they see a "Regenerate Bundle" option for completed reports
+2. **Given** the user selects "Regenerate Bundle" for a stored intermediate representation, **When** the regeneration is triggered, **Then** the system generates a new FHIR Bundle from the stored intermediate data without re-parsing the PDF
+3. **Given** FHIR Bundle regeneration is in progress, **When** the user checks the status, **Then** they see "Regenerating Bundle" status
+4. **Given** FHIR Bundle regeneration completes, **When** the user views the result, **Then** they can download the newly generated bundle
+5. **Given** the intermediate representation was manually edited, **When** regenerating the bundle, **Then** the new bundle reflects all manual corrections
+
+---
+
+### User Story 6 - Handle Multiple Patients (Priority: P4)
 
 A household with multiple people (partner, children) and pets creates patient profiles for each member, then uploads lab reports for different subjects and can distinguish between each person's or pet's results in their health records.
 
@@ -109,7 +127,7 @@ A household with multiple people (partner, children) and pets creates patient pr
 
 ---
 
-### User Story 6 - Automatic FHIR Store Integration (Priority: P5)
+### User Story 7 - Automatic FHIR Store Integration (Priority: P5)
 
 A household health manager configures their FHIR server connection details (e.g., Fasten endpoint, authentication), and after verifying the intermediate representation, the system automatically uploads the FHIR Bundle to the configured FHIR store, eliminating the manual upload step.
 
@@ -135,10 +153,14 @@ A household health manager configures their FHIR server connection details (e.g.
 - What happens when reference ranges vary by demographics (age/gender)? System should preserve the specific reference range stated in the report.
 - What happens when analyte names contain special characters or are abbreviated differently? System should handle variations and preserve original naming.
 - What happens when collection date is missing or ambiguous? System should flag for manual review.
+- What happens when collection date and result/test date are different? System should extract and record both dates separately.
+- What happens when result/test date is missing but collection date exists? System should use collection date as fallback for result date.
 - What happens when the PDF is scanned/image-based rather than text-based? System should detect and reject with appropriate error message (out of scope for text-based parsing).
 - What happens when automatic FHIR store submission is configured and submission fails (network error, server down)? System should queue for retry and track failure status (P5 feature).
 - What happens when the same lab analyte appears multiple times in one report (e.g., redraws)? System should preserve all instances with appropriate sequencing.
-- What happens when a user wants to edit the intermediate representation before FHIR generation? MVP displays for verification only; editing capability could be a future enhancement.
+- What happens when a user edits the intermediate representation but introduces schema validation errors? System should highlight errors in real-time and prevent proceeding until valid (P2 feature).
+- What happens when a user wants to regenerate a FHIR Bundle but the intermediate representation has been edited? System should use the corrected version for regeneration (P4 feature).
+- What happens when trying to regenerate a bundle for a report that was never successfully processed? System should indicate that no intermediate representation exists and suggest re-uploading.
 
 ## Requirements *(mandatory)*
 
@@ -155,9 +177,10 @@ A household health manager configures their FHIR server connection details (e.g.
 
 #### Parsing and Extraction
 
-- **FR-006**: System MUST extract structured lab data including: analyte names, numeric or qualitative values, units of measurement, reference ranges, collection date, and lab metadata
+- **FR-006**: System MUST extract structured lab data including: analyte names, numeric or qualitative values, units of measurement, reference ranges, collection date, result/test date (when different from collection date), and lab metadata
 - **FR-006a**: System MUST use structured prompting with JSON schema enforcement (via function calling or constrained generation) to ensure LLM outputs strictly conform to the intermediate schema, eliminating post-hoc validation failures
 - **FR-006b**: System MUST display the intermediate JSON representation to the user for manual verification against the original PDF before proceeding to FHIR generation
+- **FR-006c**: System MUST allow users to edit the intermediate JSON representation to correct parsing mistakes before FHIR generation
 - **FR-007**: System MUST use a validated intermediate JSON schema as the contract between parsing and FHIR generation
 - **FR-008**: System MUST validate extracted data against the intermediate schema before FHIR conversion
 - **FR-009**: System MUST handle qualitative values (e.g., "Positive", "Negative") and numeric values with operators (e.g., "<5.0", ">1000")
@@ -203,9 +226,12 @@ A household health manager configures their FHIR server connection details (e.g.
 #### Data Integrity
 
 - **FR-030**: System MUST validate that extracted collection dates are reasonable (not future dates)
+- **FR-030a**: System MUST support and distinguish between collection date and result/test date when both are present in lab reports
 - **FR-031**: System MUST validate that numeric values are within reasonable ranges for their analyte type
 - **FR-032**: System MUST flag reports with missing critical data (e.g., collection date) for manual review
 - **FR-033**: System MUST preserve the original PDF file for the lifetime of the associated FHIR resources
+- **FR-033a**: System MUST store both original (pre-edit) and corrected (post-edit) versions of intermediate representations for audit purposes
+- **FR-033b**: System MUST allow regeneration of FHIR Bundles from stored intermediate representations without re-parsing the original PDF
 
 #### Privacy and Security
 
@@ -216,29 +242,34 @@ A household health manager configures their FHIR server connection details (e.g.
 #### User Feedback and Error Handling
 
 - **FR-037**: System MUST provide immediate feedback to users upon PDF upload, indicating whether the upload was successful or failed
-- **FR-038**: System MUST display processing status (uploading, parsing, review pending, generating bundle, completed, failed) for each uploaded report in the web interface
+- **FR-038**: System MUST display processing status (uploading, parsing, review pending, editing, generating bundle, regenerating bundle, completed, failed) for each uploaded report in the web interface
 - **FR-038a**: System MUST display the intermediate JSON representation to users for manual verification before FHIR bundle generation
-- **FR-038b**: System MUST provide a confirmation button to proceed with FHIR bundle generation after user verification of intermediate representation
+- **FR-038b**: System MUST provide an "Edit" button allowing users to modify the intermediate representation when in review mode
+- **FR-038c**: System MUST validate edits to the intermediate representation against the intermediate schema in real-time and highlight validation errors
+- **FR-038d**: System MUST provide a "Save Edits" button to save corrections and a confirmation button to proceed with FHIR bundle generation after user verification/editing
 - **FR-039**: System MUST provide clear, actionable error messages when processing fails, indicating the reason (e.g., "PDF is scanned/image-based", "Missing collection date", "Invalid file format")
 - **FR-040**: System MUST allow users to view the processing history and status of all previously uploaded reports
+- **FR-040a**: System MUST provide a "Regenerate Bundle" option for previously processed reports with stored intermediate representations
 - **FR-041**: System MUST display a download button when FHIR Bundle generation is complete, allowing users to download the bundle as a JSON file for manual upload to their FHIR store
 - **FR-041a**: System MAY optionally notify users when a report is automatically imported to the FHIR store (P5 feature only), with a link or reference to view the data
 
 ### Key Entities
 
-- **Lab Report**: Represents an uploaded PDF document containing laboratory test results. Key attributes: file hash, upload timestamp, associated patient, processing status (queued, processing, completed, failed), error messages (if any), source file reference.
+- **Lab Report**: Represents an uploaded PDF document containing laboratory test results. Key attributes: file hash, upload timestamp, associated patient, processing status (queued, processing, review pending, editing, generating bundle, regenerating bundle, completed, failed), error messages (if any), source file reference.
 
-- **Parsed Lab Data**: Intermediate structured representation of lab results extracted from PDF using structured LLM prompting with JSON schema enforcement. Key attributes: lab metadata (name, address), collection date, report date, result list (each with analyte name, value, unit, reference range). This is the validated JSON contract between parsing and FHIR generation.
+- **Parsed Lab Data**: Intermediate structured representation of lab results extracted from PDF using structured LLM prompting with JSON schema enforcement. Key attributes: lab metadata (name, address), collection date, result/test date (when different from collection), report date, result list (each with analyte name, value, unit, reference range). This is the validated JSON contract between parsing and FHIR generation. Both original (pre-edit) and corrected (post-edit) versions are stored for audit purposes.
 
 - **Patient/Subject Profile**: Represents the individual (human or animal) to whom the lab results belong. Key attributes: patient identifier (system-generated or user-provided), display name, patient type (human/veterinary), creation date. Relationships: has many lab reports, has many observations. Managed through web interface.
 
-- **Lab Analyte Measurement**: Individual test result within a lab report. Key attributes: analyte name (original and normalized), value (numeric or qualitative), unit (original and normalized), reference range, collection timestamp. Relationships: belongs to lab report, maps to FHIR Observation.
+- **Lab Analyte Measurement**: Individual test result within a lab report. Key attributes: analyte name (original and normalized), value (numeric or qualitative), unit (original and normalized), reference range, collection date, result/test date (when different). Relationships: belongs to lab report, maps to FHIR Observation.
 
-- **FHIR Bundle**: Transaction bundle containing all FHIR resources for a single lab report. Relationships: contains DocumentReference, DiagnosticReport, and multiple Observation resources.
+- **FHIR Bundle**: Transaction bundle containing all FHIR resources for a single lab report. Relationships: contains DocumentReference, DiagnosticReport, and multiple Observation resources. Can be regenerated from stored intermediate representation.
 
 - **Submission Record**: Tracks the status of FHIR Bundle submission to the target FHIR server. Key attributes: submission timestamp, status (pending/success/failed), retry count, error messages, FHIR server endpoint used. Relationships: associated with one FHIR Bundle.
 
 - **System Configuration**: Stores system-wide settings. Key attributes: FHIR server base URL, authentication credentials, LLM provider settings (local vs. API-based), retry policy parameters. Managed via environment variables or configuration file.
+
+- **Edit History**: Tracks manual corrections made to intermediate representations. Key attributes: edit timestamp, user identifier, original values, corrected values, validation status. Relationships: associated with one Parsed Lab Data entity.
 
 - **Lab Analyte Measurement**: Individual test result within a lab report. Key attributes: analyte name (original and normalized), value (numeric or qualitative), unit (original and normalized), reference range, collection timestamp. Relationships: belongs to lab report, maps to FHIR Observation.
 
@@ -299,3 +330,8 @@ A household health manager configures their FHIR server connection details (e.g.
 - **SC-013**: Error messages clearly indicate the cause of failure in 95%+ of error scenarios, enabling users to take corrective action
 - **SC-014**: Users can successfully verify intermediate representation accuracy by comparing against original PDF in 90%+ of cases
 - **SC-015**: Downloaded FHIR Bundles can be successfully imported to Fasten or other FHIR R4-compliant servers without modification 95%+ of the time
+- **SC-016**: Users can successfully edit intermediate representations to correct parsing mistakes in under 2 minutes per correction (P2 feature)
+- **SC-017**: Edited intermediate representations pass schema validation 100% of the time before allowing FHIR generation (P2 feature)
+- **SC-018**: System preserves both original and edited intermediate representations for audit purposes 100% of the time (P2 feature)
+- **SC-019**: Users can regenerate FHIR Bundles from stored intermediate representations in under 30 seconds without re-parsing PDF (P4 feature)
+- **SC-020**: System correctly extracts and distinguishes collection date from result/test date when both are present in lab reports 90%+ of the time

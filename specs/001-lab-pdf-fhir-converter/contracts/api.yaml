@@ -1,0 +1,1293 @@
+openapi: 3.0.3
+info:
+  title: Lab2FHIR API
+  version: 1.0.0
+  description: |
+    REST API for converting laboratory PDF reports into FHIR-compliant clinical resources.
+    
+    **Features:**
+    - Patient profile management for household members
+    - PDF upload and processing with LLM-based extraction
+    - Intermediate representation review and editing
+    - FHIR R4 Bundle generation and download
+    - Upload history and status tracking
+    
+    **Processing Workflow:**
+    1. Upload PDF → 2. Extract text → 3. Parse with LLM → 4. Review intermediate representation → 
+    5. (Optional) Edit corrections → 6. Generate FHIR Bundle → 7. Download bundle
+    
+  contact:
+    name: Lab2FHIR Support
+    url: https://github.com/yourusername/Lab2FHIR
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: https://api.lab2fhir.local
+    description: Self-hosted production server
+
+tags:
+  - name: patients
+    description: Patient profile management
+  - name: uploads
+    description: PDF upload and processing
+  - name: intermediate
+    description: Intermediate representation operations
+  - name: fhir
+    description: FHIR bundle operations
+
+security:
+  - bearerAuth: []
+  - {}  # Allow unauthenticated access for MVP
+
+paths:
+  /api/patients:
+    post:
+      tags:
+        - patients
+      summary: Create patient profile
+      description: Create a new patient profile for a household member (human or veterinary)
+      operationId: createPatient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientCreate'
+            examples:
+              human:
+                summary: Human patient
+                value:
+                  display_name: "John Doe"
+                  patient_type: "human"
+                  notes: "Father, age 45"
+              veterinary:
+                summary: Veterinary patient
+                value:
+                  display_name: "Max (Dog)"
+                  patient_type: "veterinary"
+                  external_identifier: "VET-12345"
+                  external_identifier_system: "VetClinicID"
+                  notes: "Golden Retriever, 5 years old"
+      responses:
+        '201':
+          description: Patient created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientResponse'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                display_name: "John Doe"
+                patient_type: "human"
+                external_identifier: null
+                external_identifier_system: null
+                notes: "Father, age 45"
+                created_at: "2024-02-14T10:30:00Z"
+                updated_at: "2024-02-14T10:30:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags:
+        - patients
+      summary: List patient profiles
+      description: Retrieve all patient profiles in the household
+      operationId: listPatients
+      parameters:
+        - name: patient_type
+          in: query
+          description: Filter by patient type
+          schema:
+            type: string
+            enum: [human, veterinary]
+        - name: limit
+          in: query
+          description: Maximum number of results
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          description: Number of results to skip
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of patients
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PatientResponse'
+                  total:
+                    type: integer
+                    description: Total number of patients
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+              example:
+                items:
+                  - id: "550e8400-e29b-41d4-a716-446655440000"
+                    display_name: "John Doe"
+                    patient_type: "human"
+                    external_identifier: null
+                    external_identifier_system: null
+                    notes: "Father, age 45"
+                    created_at: "2024-02-14T10:30:00Z"
+                    updated_at: "2024-02-14T10:30:00Z"
+                  - id: "661f9511-f3ac-52e5-b827-557766551111"
+                    display_name: "Max (Dog)"
+                    patient_type: "veterinary"
+                    external_identifier: "VET-12345"
+                    external_identifier_system: "VetClinicID"
+                    notes: "Golden Retriever, 5 years old"
+                    created_at: "2024-02-14T11:00:00Z"
+                    updated_at: "2024-02-14T11:00:00Z"
+                total: 2
+                limit: 50
+                offset: 0
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/patients/{id}:
+    get:
+      tags:
+        - patients
+      summary: Get patient details
+      description: Retrieve a specific patient profile by ID
+      operationId: getPatient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Patient UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Patient details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/uploads:
+    post:
+      tags:
+        - uploads
+      summary: Upload lab PDF
+      description: |
+        Upload a PDF lab report for processing. The file will be:
+        1. Validated and hashed (SHA-256 for duplicate detection)
+        2. Stored with metadata
+        3. Queued for text extraction and LLM parsing
+        
+        **Note:** Processing happens asynchronously. Use GET /api/uploads/{id} to check status.
+      operationId: uploadPDF
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - patient_id
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: PDF file (max 10MB)
+                patient_id:
+                  type: string
+                  format: uuid
+                  description: Patient profile ID to associate with this upload
+            encoding:
+              file:
+                contentType: application/pdf
+      responses:
+        '201':
+          description: Upload created and processing started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+              example:
+                id: "771fa622-g4bd-63f6-c938-668877662222"
+                file_name: "lab_report_2024_01_15.pdf"
+                file_size_bytes: 245678
+                mime_type: "application/pdf"
+                sha256_hash: "a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e5f7a9b1c3d5e7f9a1b3c5d7e9f1a3b5"
+                status: "uploaded"
+                error_message: null
+                patient_id: "550e8400-e29b-41d4-a716-446655440000"
+                uploaded_at: "2024-02-14T12:00:00Z"
+                processing_started_at: null
+                processing_completed_at: null
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Duplicate upload detected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Duplicate file detected"
+                detail: "A file with the same content (SHA-256 hash) has already been uploaded"
+                existing_upload_id: "771fa622-g4bd-63f6-c938-668877662222"
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags:
+        - uploads
+      summary: List uploads
+      description: |
+        Retrieve upload history with optional filtering.
+        Useful for viewing processing history and tracking uploads over time.
+      operationId: listUploads
+      parameters:
+        - name: patient_id
+          in: query
+          description: Filter by patient ID
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter by processing status
+          schema:
+            $ref: '#/components/schemas/UploadStatus'
+        - name: from_date
+          in: query
+          description: Filter uploads from this date (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: to_date
+          in: query
+          description: Filter uploads until this date (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          description: Maximum number of results
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          description: Number of results to skip
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: sort
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [uploaded_at_asc, uploaded_at_desc]
+            default: uploaded_at_desc
+      responses:
+        '200':
+          description: List of uploads
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UploadResponse'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+              example:
+                items:
+                  - id: "771fa622-g4bd-63f6-c938-668877662222"
+                    file_name: "lab_report_2024_01_15.pdf"
+                    file_size_bytes: 245678
+                    mime_type: "application/pdf"
+                    sha256_hash: "a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e5f7a9b1c3d5e7f9a1b3c5d7e9f1a3b5"
+                    status: "completed"
+                    error_message: null
+                    patient_id: "550e8400-e29b-41d4-a716-446655440000"
+                    uploaded_at: "2024-02-14T12:00:00Z"
+                    processing_started_at: "2024-02-14T12:00:05Z"
+                    processing_completed_at: "2024-02-14T12:01:23Z"
+                total: 1
+                limit: 50
+                offset: 0
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/uploads/{id}:
+    get:
+      tags:
+        - uploads
+      summary: Get upload status
+      description: |
+        Retrieve detailed status of a specific upload, including current processing stage,
+        any errors, and timestamps.
+      operationId: getUploadStatus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Upload UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Upload details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+              example:
+                id: "771fa622-g4bd-63f6-c938-668877662222"
+                file_name: "lab_report_2024_01_15.pdf"
+                file_size_bytes: 245678
+                mime_type: "application/pdf"
+                sha256_hash: "a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e5f7a9b1c3d5e7f9a1b3c5d7e9f1a3b5"
+                status: "review_pending"
+                error_message: null
+                patient_id: "550e8400-e29b-41d4-a716-446655440000"
+                uploaded_at: "2024-02-14T12:00:00Z"
+                processing_started_at: "2024-02-14T12:00:05Z"
+                processing_completed_at: null
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/uploads/{id}/intermediate:
+    get:
+      tags:
+        - intermediate
+      summary: Get intermediate representation
+      description: |
+        Retrieve the current intermediate JSON representation for an upload.
+        This is the structured data extracted by the LLM, ready for review and editing.
+      operationId: getIntermediate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Upload UUID
+          schema:
+            type: string
+            format: uuid
+        - name: version
+          in: query
+          description: Specific version to retrieve (omit for current version)
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Intermediate representation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntermediateRepresentationResponse'
+              example:
+                id: "882gb733-h5ce-74g7-d049-779988773333"
+                upload_id: "771fa622-g4bd-63f6-c938-668877662222"
+                version: 1
+                is_current: true
+                parent_id: null
+                data:
+                  lab_metadata:
+                    lab_name: "Quest Diagnostics"
+                    lab_address: "1234 Medical Center Dr, San Francisco, CA 94143"
+                    lab_phone: "(415) 555-0100"
+                    clia_number: "05D0987654"
+                  report_id: "RPT-2024-001234"
+                  accession_number: "ACC-20240115-5678"
+                  collection_date: "2024-01-15"
+                  result_date: "2024-01-15"
+                  report_date: "2024-01-16"
+                  analytes:
+                    - analyte_name: "Glucose"
+                      analyte_code: "2345-7"
+                      value: "95"
+                      value_type: "numeric"
+                      operator: null
+                      unit: "mg/dL"
+                      reference_range: "70-100"
+                      flag: null
+                      notes: null
+                    - analyte_name: "Hemoglobin A1c"
+                      analyte_code: "4548-4"
+                      value: "5.6"
+                      value_type: "numeric"
+                      operator: null
+                      unit: "%"
+                      reference_range: "<5.7"
+                      flag: null
+                      notes: null
+                  specimen_type: "Blood"
+                  specimen_id: "SPEC-20240115-001"
+                  ordering_provider: "Dr. Jane Smith"
+                  clinical_info: "Routine metabolic panel"
+                schema_version: "1.0.0"
+                is_validated: true
+                validation_errors: null
+                is_edited: false
+                edit_summary: null
+                edited_by: null
+                extraction_method: "gpt-4o"
+                confidence_score: 92
+                created_at: "2024-02-14T12:01:15Z"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Intermediate representation not yet available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Intermediate representation not available"
+                detail: "Upload is still processing. Current status: parsing"
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags:
+        - intermediate
+      summary: Update intermediate representation
+      description: |
+        Edit the intermediate representation to correct LLM parsing errors.
+        Creates a new version while preserving the original for audit.
+      operationId: updateIntermediate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Upload UUID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntermediateRepresentationEdit'
+            example:
+              data:
+                lab_metadata:
+                  lab_name: "Quest Diagnostics"
+                  lab_address: "1234 Medical Center Dr, San Francisco, CA 94143"
+                  lab_phone: "(415) 555-0100"
+                  clia_number: "05D0987654"
+                report_id: "RPT-2024-001234"
+                accession_number: "ACC-20240115-5678"
+                collection_date: "2024-01-15"
+                result_date: "2024-01-15"
+                report_date: "2024-01-16"
+                analytes:
+                  - analyte_name: "Glucose"
+                    analyte_code: "2345-7"
+                    value: "85"
+                    value_type: "numeric"
+                    operator: null
+                    unit: "mg/dL"
+                    reference_range: "70-100"
+                    flag: null
+                    notes: "Corrected from misread '95'"
+                  - analyte_name: "Hemoglobin A1c"
+                    analyte_code: "4548-4"
+                    value: "5.6"
+                    value_type: "numeric"
+                    operator: null
+                    unit: "%"
+                    reference_range: "<5.7"
+                    flag: null
+                    notes: null
+                specimen_type: "Blood"
+                specimen_id: "SPEC-20240115-001"
+                ordering_provider: "Dr. Jane Smith"
+                clinical_info: "Routine metabolic panel"
+              edit_summary: "Corrected glucose value from 95 to 85 (OCR misread)"
+              edited_by: "user@example.com"
+      responses:
+        '200':
+          description: Intermediate representation updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntermediateRepresentationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/uploads/{id}/generate-fhir:
+    post:
+      tags:
+        - fhir
+      summary: Generate FHIR bundle
+      description: |
+        Generate a FHIR R4 Bundle from the current intermediate representation.
+        The bundle includes:
+        - Patient resource (reference to existing profile)
+        - DiagnosticReport resource
+        - Observation resources (one per analyte)
+        - DocumentReference (PDF attachment)
+      operationId: generateFHIRBundle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Upload UUID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                regenerate:
+                  type: boolean
+                  default: false
+                  description: Force regeneration even if bundle already exists
+      responses:
+        '201':
+          description: FHIR bundle generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FHIRBundleResponse'
+              example:
+                id: "993hc844-i6df-85h8-e15a-88aa99884444"
+                upload_id: "771fa622-g4bd-63f6-c938-668877662222"
+                intermediate_representation_id: "882gb733-h5ce-74g7-d049-779988773333"
+                bundle_type: "transaction"
+                resource_ids:
+                  - "Patient/550e8400-e29b-41d4-a716-446655440000"
+                  - "DiagnosticReport/771fa622-g4bd-63f6-c938-668877662222"
+                  - "Observation/obs-glucose-001"
+                  - "Observation/obs-hba1c-001"
+                  - "DocumentReference/doc-771fa622-g4bd-63f6-c938-668877662222"
+                resource_types:
+                  - "Patient"
+                  - "DiagnosticReport"
+                  - "Observation"
+                  - "Observation"
+                  - "DocumentReference"
+                is_valid: true
+                validation_errors: null
+                validator_version: "fhir.resources-7.0.2"
+                generation_method: "automated"
+                is_regenerated: false
+                generated_at: "2024-02-14T12:02:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Bundle already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "FHIR bundle already exists"
+                detail: "Use regenerate=true to force regeneration"
+                bundle_id: "993hc844-i6df-85h8-e15a-88aa99884444"
+        '422':
+          description: Cannot generate bundle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Cannot generate FHIR bundle"
+                detail: "Intermediate representation not validated or upload not in valid state"
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/uploads/{id}/bundle:
+    get:
+      tags:
+        - fhir
+      summary: Download FHIR bundle
+      description: |
+        Download the generated FHIR Bundle as a JSON file.
+        This file can be manually uploaded to a FHIR server (e.g., Fasten Health).
+      operationId: downloadFHIRBundle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Upload UUID
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: query
+          description: Response format
+          schema:
+            type: string
+            enum: [json, xml]
+            default: json
+      responses:
+        '200':
+          description: FHIR bundle file
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+                description: FHIR R4 Bundle
+              example:
+                resourceType: "Bundle"
+                type: "transaction"
+                entry:
+                  - fullUrl: "urn:uuid:550e8400-e29b-41d4-a716-446655440000"
+                    resource:
+                      resourceType: "Patient"
+                      id: "550e8400-e29b-41d4-a716-446655440000"
+                      name:
+                        - text: "John Doe"
+                    request:
+                      method: "PUT"
+                      url: "Patient/550e8400-e29b-41d4-a716-446655440000"
+                  - fullUrl: "urn:uuid:771fa622-g4bd-63f6-c938-668877662222"
+                    resource:
+                      resourceType: "DiagnosticReport"
+                      id: "771fa622-g4bd-63f6-c938-668877662222"
+                      status: "final"
+                      code:
+                        coding:
+                          - system: "http://loinc.org"
+                            code: "11502-2"
+                            display: "Laboratory report"
+                      subject:
+                        reference: "Patient/550e8400-e29b-41d4-a716-446655440000"
+                      effectiveDateTime: "2024-01-15T00:00:00Z"
+                      issued: "2024-01-16T00:00:00Z"
+                      result:
+                        - reference: "Observation/obs-glucose-001"
+                        - reference: "Observation/obs-hba1c-001"
+                    request:
+                      method: "PUT"
+                      url: "DiagnosticReport/771fa622-g4bd-63f6-c938-668877662222"
+            application/fhir+xml:
+              schema:
+                type: string
+                format: xml
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: 'attachment; filename="fhir_bundle_771fa622.json"'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Bundle not yet generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "FHIR bundle not available"
+                detail: "Bundle has not been generated yet. Use POST /api/uploads/{id}/generate-fhir first"
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authenticated requests (placeholder for future implementation)
+
+  schemas:
+    # Patient Schemas
+    PatientCreate:
+      type: object
+      required:
+        - display_name
+      properties:
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Human-readable name for the patient
+          example: "John Doe"
+        patient_type:
+          type: string
+          enum: [human, veterinary]
+          default: human
+          description: Type of patient
+        external_identifier:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: External identifier (e.g., MRN, SSN, VetID)
+          example: "MRN-123456"
+        external_identifier_system:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: System/authority for external identifier
+          example: "MRN"
+        notes:
+          type: string
+          nullable: true
+          description: Additional notes about the patient
+          example: "Father, age 45, diabetic"
+
+    PatientResponse:
+      allOf:
+        - $ref: '#/components/schemas/PatientCreate'
+        - type: object
+          required:
+            - id
+            - created_at
+            - updated_at
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: Patient UUID
+            created_at:
+              type: string
+              format: date-time
+              description: Creation timestamp
+            updated_at:
+              type: string
+              format: date-time
+              description: Last update timestamp
+
+    # Upload Schemas
+    UploadStatus:
+      type: string
+      enum:
+        - uploaded
+        - extracting
+        - parsing
+        - review_pending
+        - editing
+        - validating
+        - generating_fhir
+        - regenerating_fhir
+        - completed
+        - failed
+      description: |
+        Processing status of the upload:
+        - uploaded: File received, awaiting processing
+        - extracting: Text extraction from PDF in progress
+        - parsing: LLM parsing in progress
+        - review_pending: Intermediate representation ready for review
+        - editing: User is editing intermediate representation
+        - validating: Validating edited intermediate representation
+        - generating_fhir: FHIR bundle generation in progress
+        - regenerating_fhir: Regenerating FHIR bundle from existing intermediate
+        - completed: Processing complete, FHIR bundle available
+        - failed: Processing failed, see error_message
+
+    UploadResponse:
+      type: object
+      required:
+        - id
+        - file_name
+        - file_size_bytes
+        - mime_type
+        - sha256_hash
+        - status
+        - patient_id
+        - uploaded_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Upload UUID
+        file_name:
+          type: string
+          description: Original filename
+          example: "lab_report_2024_01_15.pdf"
+        file_size_bytes:
+          type: integer
+          minimum: 1
+          description: File size in bytes
+          example: 245678
+        mime_type:
+          type: string
+          description: MIME type
+          example: "application/pdf"
+        sha256_hash:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+          description: SHA-256 hash for duplicate detection
+          example: "a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e5f7a9b1c3d5e7f9a1b3c5d7e9f1a3b5"
+        status:
+          $ref: '#/components/schemas/UploadStatus'
+        error_message:
+          type: string
+          nullable: true
+          description: Error details if status is 'failed'
+        patient_id:
+          type: string
+          format: uuid
+          description: Associated patient UUID
+        uploaded_at:
+          type: string
+          format: date-time
+          description: Upload timestamp
+        processing_started_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Processing start timestamp
+        processing_completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Processing completion timestamp
+
+    # Intermediate Representation Schemas
+    LabMetadata:
+      type: object
+      properties:
+        lab_name:
+          type: string
+          nullable: true
+          example: "Quest Diagnostics"
+        lab_address:
+          type: string
+          nullable: true
+          example: "1234 Medical Center Dr, San Francisco, CA 94143"
+        lab_phone:
+          type: string
+          nullable: true
+          example: "(415) 555-0100"
+        clia_number:
+          type: string
+          nullable: true
+          description: Clinical Laboratory Improvement Amendments ID
+          example: "05D0987654"
+
+    AnalyteResult:
+      type: object
+      required:
+        - analyte_name
+        - value
+        - value_type
+      properties:
+        analyte_name:
+          type: string
+          description: Test name as stated in report
+          example: "Glucose"
+        analyte_code:
+          type: string
+          nullable: true
+          description: LOINC or local code
+          example: "2345-7"
+        value:
+          type: string
+          description: Result value (numeric or qualitative)
+          example: "95"
+        value_type:
+          type: string
+          enum: [numeric, qualitative, operator]
+          default: numeric
+          description: Type of value
+        operator:
+          type: string
+          nullable: true
+          pattern: '^(<|>|<=|>=)$'
+          description: Comparison operator for values like '>100'
+          example: null
+        unit:
+          type: string
+          nullable: true
+          description: Unit of measurement
+          example: "mg/dL"
+        reference_range:
+          type: string
+          nullable: true
+          description: Reference range from report
+          example: "70-100"
+        flag:
+          type: string
+          nullable: true
+          description: Result flag (H=High, L=Low, A=Abnormal, C=Critical)
+          example: null
+        notes:
+          type: string
+          nullable: true
+          description: Additional notes or comments
+          example: null
+
+    IntermediateData:
+      type: object
+      required:
+        - lab_metadata
+        - collection_date
+        - analytes
+      properties:
+        lab_metadata:
+          $ref: '#/components/schemas/LabMetadata'
+        report_id:
+          type: string
+          nullable: true
+          description: Report identifier from lab
+          example: "RPT-2024-001234"
+        accession_number:
+          type: string
+          nullable: true
+          description: Accession number from lab
+          example: "ACC-20240115-5678"
+        collection_date:
+          type: string
+          format: date
+          description: Specimen collection date (ISO 8601)
+          example: "2024-01-15"
+        result_date:
+          type: string
+          format: date
+          nullable: true
+          description: Result/test date if different from collection
+          example: "2024-01-15"
+        report_date:
+          type: string
+          format: date
+          nullable: true
+          description: Report issued date
+          example: "2024-01-16"
+        analytes:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/AnalyteResult'
+          description: List of lab test results
+        specimen_type:
+          type: string
+          nullable: true
+          description: Type of specimen (e.g., Blood, Urine)
+          example: "Blood"
+        specimen_id:
+          type: string
+          nullable: true
+          description: Specimen identifier
+          example: "SPEC-20240115-001"
+        ordering_provider:
+          type: string
+          nullable: true
+          description: Name of ordering provider
+          example: "Dr. Jane Smith"
+        clinical_info:
+          type: string
+          nullable: true
+          description: Clinical information or reason for test
+          example: "Routine metabolic panel"
+
+    IntermediateRepresentationEdit:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/IntermediateData'
+        edit_summary:
+          type: string
+          nullable: true
+          description: Summary of changes made
+          example: "Corrected glucose value from 95 to 85 (OCR misread)"
+        edited_by:
+          type: string
+          nullable: true
+          description: User identifier who made the edit
+          example: "user@example.com"
+
+    IntermediateRepresentationResponse:
+      type: object
+      required:
+        - id
+        - upload_id
+        - version
+        - is_current
+        - data
+        - schema_version
+        - is_validated
+        - is_edited
+        - extraction_method
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Intermediate representation UUID
+        upload_id:
+          type: string
+          format: uuid
+          description: Associated upload UUID
+        version:
+          type: integer
+          minimum: 1
+          description: Version number (increments with edits)
+          example: 1
+        is_current:
+          type: boolean
+          description: Whether this is the current version
+          example: true
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Parent version UUID (for edit history)
+        data:
+          $ref: '#/components/schemas/IntermediateData'
+        schema_version:
+          type: string
+          description: Intermediate schema version
+          example: "1.0.0"
+        is_validated:
+          type: boolean
+          description: Whether data passed schema validation
+          example: true
+        validation_errors:
+          type: object
+          nullable: true
+          description: Validation errors if any
+        is_edited:
+          type: boolean
+          description: Whether this version was manually edited
+          example: false
+        edit_summary:
+          type: string
+          nullable: true
+          description: Summary of edits made
+        edited_by:
+          type: string
+          nullable: true
+          description: User who made edits
+        extraction_method:
+          type: string
+          description: LLM model used for extraction
+          example: "gpt-4o"
+        confidence_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
+          description: Extraction confidence score (0-100)
+          example: 92
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+
+    # FHIR Bundle Schemas
+    FHIRBundleResponse:
+      type: object
+      required:
+        - id
+        - upload_id
+        - intermediate_representation_id
+        - bundle_type
+        - resource_ids
+        - resource_types
+        - is_valid
+        - generation_method
+        - is_regenerated
+        - generated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: FHIR bundle UUID
+        upload_id:
+          type: string
+          format: uuid
+          description: Associated upload UUID
+        intermediate_representation_id:
+          type: string
+          format: uuid
+          description: Source intermediate representation UUID
+        bundle_type:
+          type: string
+          description: FHIR bundle type
+          example: "transaction"
+        resource_ids:
+          type: array
+          items:
+            type: string
+          description: List of FHIR resource IDs in bundle
+          example:
+            - "Patient/550e8400-e29b-41d4-a716-446655440000"
+            - "DiagnosticReport/771fa622-g4bd-63f6-c938-668877662222"
+        resource_types:
+          type: array
+          items:
+            type: string
+          description: List of FHIR resource types
+          example:
+            - "Patient"
+            - "DiagnosticReport"
+            - "Observation"
+            - "DocumentReference"
+        is_valid:
+          type: boolean
+          description: Whether bundle passed FHIR validation
+          example: true
+        validation_errors:
+          type: object
+          nullable: true
+          description: FHIR validation errors if any
+        validator_version:
+          type: string
+          nullable: true
+          description: FHIR validator library version
+          example: "fhir.resources-7.0.2"
+        generation_method:
+          type: string
+          description: How bundle was generated
+          example: "automated"
+        is_regenerated:
+          type: boolean
+          description: Whether this is a regenerated bundle
+          example: false
+        generated_at:
+          type: string
+          format: date-time
+          description: Generation timestamp
+
+    # Error Schemas
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Resource not found"
+        detail:
+          type: string
+          description: Detailed error description
+          example: "Upload with ID 771fa622-g4bd-63f6-c938-668877662222 does not exist"
+        field:
+          type: string
+          description: Field that caused the error (for validation errors)
+          example: "patient_id"
+
+    ValidationError:
+      type: object
+      required:
+        - error
+        - validation_errors
+      properties:
+        error:
+          type: string
+          example: "Validation failed"
+        validation_errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: "collection_date"
+              message:
+                type: string
+                example: "Collection date cannot be in the future"
+              type:
+                type: string
+                example: "value_error"
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Bad request"
+            detail: "Invalid file format. Only PDF files are supported"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Resource not found"
+            detail: "The requested resource does not exist"
+
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+          example:
+            error: "Validation failed"
+            validation_errors:
+              - field: "collection_date"
+                message: "Collection date cannot be in the future"
+                type: "value_error"
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Internal server error"
+            detail: "An unexpected error occurred. Please try again later"

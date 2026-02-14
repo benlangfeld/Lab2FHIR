@@ -38,8 +38,8 @@ specify --help
 
 2. **Wait for setup**: The devcontainer will automatically:
    - Install GitHub CLI and Copilot CLI
-   - Install Python 3.11
-   - Install spec-kit CLI via uv
+   - Install Python 3.11 & uv
+   - Install spec-kit CLI
 
 3. **Authenticate**: Once the Codespace is ready, authenticate with GitHub:
    ```bash
@@ -57,19 +57,3 @@ specify --help
 - [GitHub Copilot CLI](https://docs.github.com/en/copilot/github-copilot-in-the-cli)
 - [Spec Kit Documentation](https://github.com/github/spec-kit)
 - [Lab2FHIR Project Brief](docs/project-brief.md)
-
-## 🔧 Manual Installation (if needed)
-
-If for some reason the automatic installation doesn't work, you can manually install:
-
-### GitHub Copilot CLI
-The Copilot CLI is installed as a devcontainer feature and is automatically available. No manual installation is needed.
-
-### Spec Kit
-```bash
-# Install uv (Python package manager)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Install spec-kit
-uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
-```

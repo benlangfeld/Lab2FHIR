@@ -13,8 +13,8 @@ The GitHub Copilot command-line interface for AI-powered assistance in your term
 gh auth login
 
 # Use Copilot CLI
-gh copilot suggest "how to parse a PDF in Python"
-gh copilot explain "git rebase -i HEAD~3"
+copilot suggest "how to parse a PDF in Python"
+copilot explain "git rebase -i HEAD~3"
 ```
 
 ### Spec Kit
@@ -37,7 +37,7 @@ specify --help
 1. **Open in Codespace**: Click the "Code" button on GitHub and select "Create codespace"
 
 2. **Wait for setup**: The devcontainer will automatically:
-   - Install GitHub CLI with Copilot extension
+   - Install GitHub CLI and Copilot CLI
    - Install Python 3.11
    - Install spec-kit CLI via uv
 
@@ -48,7 +48,7 @@ specify --help
 
 4. **Verify tools**: Check that everything is installed correctly:
    ```bash
-   gh copilot --version
+   copilot --version
    specify --version
    ```
 
@@ -63,9 +63,7 @@ specify --help
 If for some reason the automatic installation doesn't work, you can manually install:
 
 ### GitHub Copilot CLI
-```bash
-gh extension install github/gh-copilot
-```
+The Copilot CLI is installed as a devcontainer feature and is automatically available. No manual installation is needed.
 
 ### Spec Kit
 ```bash

@@ -118,8 +118,14 @@ class DateNormalizer:
         # Try to parse ISO format with timezone
         try:
             # Remove timezone info if present and parse
-            date_str_clean = re.sub(r"[+-]\d{2}:\d{2}$", "", date_str)
-            date_str_clean = re.sub(r"Z$", "", date_str_clean)
+            # First remove Z suffix, then remove timezone offset
+            date_str_clean = date_str
+            if date_str_clean.endswith('Z'):
+                date_str_clean = date_str_clean[:-1]
+            else:
+                # Remove timezone offset like +00:00 or -05:00
+                date_str_clean = re.sub(r'[+-]\d{2}:\d{2}$', '', date_str_clean)
+            
             dt = datetime.fromisoformat(date_str_clean)
             return dt.strftime("%Y-%m-%d")
         except (ValueError, AttributeError):
@@ -154,8 +160,14 @@ class DateNormalizer:
 
         # Try to parse ISO format
         try:
-            datetime_str_clean = re.sub(r"[+-]\d{2}:\d{2}$", "", datetime_str)
-            datetime_str_clean = re.sub(r"Z$", "", datetime_str_clean)
+            # Remove timezone info if present and parse
+            datetime_str_clean = datetime_str
+            if datetime_str_clean.endswith('Z'):
+                datetime_str_clean = datetime_str_clean[:-1]
+            else:
+                # Remove timezone offset like +00:00 or -05:00
+                datetime_str_clean = re.sub(r'[+-]\d{2}:\d{2}$', '', datetime_str_clean)
+            
             dt = datetime.fromisoformat(datetime_str_clean)
             return dt.isoformat()
         except (ValueError, AttributeError):

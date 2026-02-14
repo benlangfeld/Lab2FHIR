@@ -86,10 +86,22 @@ def test_integration():
 
     # Verify bundle entries
     print("\n4. Verifying FHIR resources...")
+    from fhir.resources.documentreference import DocumentReference
+    from fhir.resources.diagnosticreport import DiagnosticReport
+    from fhir.resources.observation import Observation
+    
     entry_types = []
     for entry in fhir_bundle.entry:
-        # Use __resource_type__ for fhir.resources
-        resource_type = getattr(entry.resource, '__resource_type__', type(entry.resource).__name__)
+        # Use isinstance to check resource type
+        if isinstance(entry.resource, DocumentReference):
+            resource_type = "DocumentReference"
+        elif isinstance(entry.resource, DiagnosticReport):
+            resource_type = "DiagnosticReport"
+        elif isinstance(entry.resource, Observation):
+            resource_type = "Observation"
+        else:
+            resource_type = type(entry.resource).__name__
+        
         entry_types.append(resource_type)
         print(f"   ✓ {resource_type} (ID: {entry.resource.id})")
 

@@ -49,8 +49,12 @@ class FHIRConverter:
             # Return current UTC time with timezone
             return datetime.now(timezone.utc).isoformat()
         
-        # If already has timezone info, return as is
-        if dt_string.endswith('Z') or '+' in dt_string or dt_string.count('-') > 2:
+        # Check if already has timezone info using regex
+        # Match Z suffix or timezone offset like +00:00 or -05:00
+        import re
+        has_timezone = bool(re.search(r'(Z|[+-]\d{2}:\d{2})$', dt_string))
+        
+        if has_timezone:
             return dt_string
         
         # Add UTC timezone
@@ -281,8 +285,9 @@ class FHIRConverter:
         value_string = None
 
         try:
-            # Try to parse as float
-            numeric_value = float(result.value.replace(",", "").strip())
+            # Remove common formatting characters and try to parse as float
+            clean_value = result.value.replace(",", "").replace(" ", "").strip()
+            numeric_value = float(clean_value)
             value_quantity = Quantity(
                 value=numeric_value,
                 unit=normalized_unit or result.unit,

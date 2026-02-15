@@ -37,11 +37,11 @@
 - [x] T013 Implement report state machine and transition guard utility in backend/src/domain/report_state_machine.py
 - [x] T014 [P] Define intermediate schema models (payload + measurement) in backend/src/domain/intermediate_schema.py
 - [x] T015 [P] Implement deterministic ID and normalization utilities in backend/src/domain/determinism.py
-- [ ] T016 [P] Implement FHIR projection defaults and mapping helpers in backend/src/domain/fhir_mapping.py
-- [ ] T017 Create storage abstraction for source PDFs and bundle artifacts in backend/src/services/storage_service.py
-- [ ] T018 Create API error taxonomy and shared exception handlers in backend/src/api/errors.py
-- [ ] T019 Create FastAPI app bootstrap, router registration, and middleware in backend/src/main.py
-- [ ] T020 Add foundational unit tests for schema validation/state machine/determinism in backend/tests/unit/test_foundation.py
+- [x] T016 [P] Implement FHIR projection defaults and mapping helpers in backend/src/domain/fhir_mapping.py
+- [x] T017 Create storage abstraction for source PDFs and bundle artifacts in backend/src/services/storage_service.py
+- [x] T018 Create API error taxonomy and shared exception handlers in backend/src/api/errors.py
+- [x] T019 Create FastAPI app bootstrap, router registration, and middleware in backend/src/main.py
+- [x] T020 Add foundational unit tests for schema validation/state machine/determinism in backend/tests/unit/test_foundation.py
 
 **Checkpoint**: Foundation complete; user stories can proceed.
 

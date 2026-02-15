@@ -58,11 +58,24 @@ uvicorn src.main:app --reload
 
 The API will be available at `http://localhost:8000`
 
+### 7. Run the Frontend (Optional)
+
+In a separate terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend will be available at `http://localhost:5173`
+
 ## API Documentation
 
 Once the server is running, visit:
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
+- Frontend UI: `http://localhost:5173` (if running separately)
 
 ## Testing
 

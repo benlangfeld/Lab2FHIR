@@ -248,6 +248,9 @@
 - [ ] T087 [P] Update quickstart execution steps with fixture-driven validation run in specs/001-lab-pdf-fhir-converter/quickstart.md
 - [ ] T088 Re-run constitution compliance evidence and capture in specs/001-lab-pdf-fhir-converter/plan.md
 - [ ] T089 Final implementation readiness review for PR scope in specs/001-lab-pdf-fhir-converter/tasks.md
+- [ ] T090 Add analyte-specific numeric reasonableness validation rules (FR-031) in backend/src/domain/value_validation.py
+- [ ] T091 Add integration test for missing-critical-data manual review routing (FR-032) in backend/tests/integration/test_missing_critical_data_manual_review.py
+- [ ] T092 Add unit/integration tests for analyte-specific numeric reasonableness validation (FR-031) in backend/tests/unit/test_value_validation_ranges.py
 
 ---
 

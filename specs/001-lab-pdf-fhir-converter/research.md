@@ -26,7 +26,7 @@
 - Alternatives considered: Hard-coded single SaaS model provider, prompt-only free-form parsing.
 
 ## Decision 6: Deterministic deduplication and identifiers
-- Decision: Use SHA-256 file hash for upload-level dedup and deterministic Observation ID seed `{subject}|{collection_date}|{normalized_analyte}|{value}|{unit}`.
+- Decision: Use SHA-256 file hash for upload-level dedup and deterministic Observation ID seed `{subject}|{collection_datetime}|{normalized_analyte}|{value}|{unit}`.
 - Rationale: Prevents duplicate processing and duplicate clinical observations across reimports.
 - Alternatives considered: Random UUIDs only (non-deterministic), fuzzy duplicate detection (non-deterministic false positives).
 
@@ -36,9 +36,9 @@
 - Alternatives considered: Manual JSON templates (higher defect risk), full FHIR server-in-the-loop generation for MVP.
 
 ## Decision 8: Asynchronous processing pattern
-- Decision: Keep MVP processing in request-driven background task model (FastAPI background tasks) with status persisted in DB.
-- Rationale: Minimal operational complexity while still supporting status transitions and retry hooks.
-- Alternatives considered: Celery/Redis queues (more infra than needed for MVP), fully synchronous upload request (poor UX/timeouts).
+- Decision: Use durable PostgreSQL-backed job records with leasing semantics for parse/generate work, with API requests enqueueing jobs and returning status.
+- Rationale: Preserves minimal infrastructure while surviving process restarts and enabling reliable retries/status tracking.
+- Alternatives considered: FastAPI in-process background tasks only (risk of lost work on restart), Celery/Redis queues (more infra than needed for MVP), fully synchronous upload request (poor UX/timeouts).
 
 ## Decision 9: API contract style
 - Decision: REST API with explicit status resources and downloadable bundle endpoints.

@@ -202,7 +202,7 @@ A household health manager configures their FHIR server connection details (e.g.
 - **FR-018**: System MUST create individual Observation resources for each analyte measurement
 - **FR-019**: System MUST link Observations to their parent DiagnosticReport
 - **FR-020**: System MUST link the DiagnosticReport to the source DocumentReference
-- **FR-021**: System MUST generate deterministic identifiers for each Observation using the pattern: {subject}|{collection_date}|{normalized_analyte}|{value}|{unit}
+- **FR-021**: System MUST generate deterministic identifiers for each Observation using the pattern: {subject}|{collection_datetime}|{normalized_analyte}|{value}|{unit}
 - **FR-022**: System MUST use transaction Bundles to ensure atomic submission of all resources
 
 #### Multi-Patient Support
@@ -271,17 +271,12 @@ A household health manager configures their FHIR server connection details (e.g.
 
 - **Edit History**: Tracks manual corrections made to intermediate representations. Key attributes: edit timestamp, user identifier, original values, corrected values, validation status. Relationships: associated with one Parsed Lab Data entity.
 
-- **Lab Analyte Measurement**: Individual test result within a lab report. Key attributes: analyte name (original and normalized), value (numeric or qualitative), unit (original and normalized), reference range, collection timestamp. Relationships: belongs to lab report, maps to FHIR Observation.
-
-- **FHIR Bundle**: Transaction bundle containing all FHIR resources for a single lab report. Relationships: contains DocumentReference, DiagnosticReport, and multiple Observation resources.
-
-- **Submission Record**: Tracks the status of FHIR Bundle submission to the target FHIR server. Key attributes: submission timestamp, status (pending/success/failed), retry count, error messages. Relationships: associated with one FHIR Bundle.
 
 ## Constitution Alignment *(mandatory)*
 
 - **Deterministic Behavior**: The system ensures deterministic outputs through:
   - File hash-based deduplication prevents duplicate processing of identical uploads
-  - Deterministic FHIR Observation identifiers using the pattern {subject}|{collection_date}|{normalized_analyte}|{value}|{unit} prevent duplicate observations even if the same data is processed multiple times
+  - Deterministic FHIR Observation identifiers using the pattern {subject}|{collection_datetime}|{normalized_analyte}|{value}|{unit} prevent duplicate observations even if the same data is processed multiple times
   - Normalization rules (date formats, analyte names, units) follow consistent, reproducible transformations
   - FHIR Bundle generation follows a fixed structure and ordering
   - Reprocessing the same source data will always produce identical FHIR resources

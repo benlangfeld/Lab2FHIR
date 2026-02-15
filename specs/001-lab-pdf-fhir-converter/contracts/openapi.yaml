@@ -84,6 +84,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags: [Reports]
+      summary: List report processing history
+      operationId: listReports
+      parameters:
+        - name: patientId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Report history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LabReport'
+                required: [items]
 
   /reports/{reportId}:
     get:
@@ -185,38 +209,42 @@ paths:
           content:
             application/fhir+json:
               schema:
-                type: object
+                $ref: '#/components/schemas/FhirBundle'
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/FhirBundle'
         '404':
           description: No generated bundle available
 
-  /reports:
+  /reports/{reportId}/source:
     get:
       tags: [Reports]
-      summary: List report processing history
-      operationId: listReports
+      summary: Retrieve original source document metadata or content for a report
+      operationId: getReportSource
       parameters:
-        - name: patientId
-          in: query
-          required: false
-          schema:
-            type: string
-            format: uuid
+        - $ref: '#/components/parameters/ReportId'
       responses:
         '200':
-          description: Report history
+          description: Source document metadata/content reference
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/LabReport'
-                required: [items]
+                  reportId:
+                    type: string
+                    format: uuid
+                  filename:
+                    type: string
+                  mimeType:
+                    type: string
+                  storageUri:
+                    type: string
+                  fileHashSha256:
+                    type: string
+                required: [reportId, filename, mimeType, storageUri, fileHashSha256]
+        '404':
+          description: Not found
 
 components:
   parameters:
@@ -412,3 +440,31 @@ components:
           items:
             type: object
       required: [code, message, errors]
+
+    FhirBundle:
+      type: object
+      properties:
+        resourceType:
+          type: string
+          enum: [Bundle]
+        type:
+          type: string
+          enum: [transaction]
+        entry:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            properties:
+              resource:
+                type: object
+              request:
+                type: object
+                properties:
+                  method:
+                    type: string
+                  url:
+                    type: string
+                required: [method, url]
+            required: [resource, request]
+      required: [resourceType, type, entry]

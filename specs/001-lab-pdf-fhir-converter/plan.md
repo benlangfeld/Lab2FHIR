@@ -46,7 +46,7 @@ Implementation uses Python (FastAPI + Pydantic v2) and PostgreSQL for state/audi
 **Scale/Scope**:
 - Household-scale usage (multi-patient: humans + veterinary)
 - Initial concurrency target: low-to-moderate (single household active sessions)
-- Initial feature slice: P1/P2 required for MVP; P4/P5 staged behind optional capability flags
+- Initial feature slice: P1/P2/P3 required for MVP; P4/P5 staged behind optional capability flags
 
 ## Implementation Clarifications
 
@@ -84,7 +84,7 @@ Implementation uses Python (FastAPI + Pydantic v2) and PostgreSQL for state/audi
 
 - Deterministic behavior: PASS
   - SHA-256 file hash for upload deduplication
-  - Deterministic observation key seed `{subject}|{collection_date}|{normalized_analyte}|{value}|{unit}`
+  - Deterministic observation key seed `{subject}|{collection_datetime}|{normalized_analyte}|{value}|{unit}`
   - Stable normalization ordering and bundle generation path
 - Intermediate schema enforcement: PASS
   - Parsing output must conform to strict intermediate schema (Pydantic model)
@@ -139,7 +139,7 @@ backend/
 │   ├── db/              # SQLAlchemy models, repositories, alembic config
 │   └── main.py
 └── tests/
-  ├── fixtures/        # synthetic PDF fixtures + expected parsed/FHIR snapshots
+    ├── fixtures/        # synthetic PDF fixtures + expected parsed/FHIR snapshots
     ├── unit/
     ├── integration/
     └── contract/

@@ -85,7 +85,10 @@ class LabMeasurement(BaseModel):
     @classmethod
     def validate_collection_not_future(cls, v: datetime) -> datetime:
         """Validate that collection datetime is not in the future."""
-        if v > datetime.now(v.tzinfo):
+        # For naive datetimes, compare with naive UTC now
+        # For timezone-aware, compare with aware now
+        now = datetime.now() if v.tzinfo is None else datetime.now(v.tzinfo)
+        if v > now:
             raise ValueError("collection_datetime cannot be in the future")
         return v
 

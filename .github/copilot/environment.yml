@@ -6,3 +6,50 @@ tools:
   # Install uv for Python dependency management (used in this project)
   - run: pip install uv
     name: Install uv package manager
+
+# Pre-commit checks to run before committing backend changes
+# These checks ensure code quality and prevent CI failures
+instructions: |
+  ## Pre-Commit Checklist for Backend Changes
+  
+  **ALWAYS** run these checks from the `backend/` directory before committing:
+  
+  ```bash
+  cd backend
+  
+  # 1. Lint check (must pass)
+  uv run ruff check .
+  
+  # 2. Format check (must pass)
+  uv run ruff format --check .
+  
+  # 3. Unit tests (must pass)
+  uv run pytest tests/unit/ -v
+  ```
+  
+  ### Auto-Fix Commands
+  
+  **Lint errors:**
+  ```bash
+  uv run ruff check --fix .
+  ```
+  
+  **Format errors:**
+  ```bash
+  uv run ruff format .
+  ```
+  
+  ### Quick One-Liner
+  Run all checks at once:
+  ```bash
+  cd backend && uv run ruff check . && uv run ruff format --check . && uv run pytest tests/unit/ -v
+  ```
+  
+  ### Integration Tests
+  Integration tests require PostgreSQL and will fail locally (expected).
+  They pass in CI where PostgreSQL service is available.
+  
+  ### Why This Matters
+  - CI blocks merging if lint or tests fail
+  - Local verification is faster than waiting for CI
+  - Catching issues early saves time and frustration

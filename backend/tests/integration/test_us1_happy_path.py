@@ -56,6 +56,15 @@ async def test_us1_happy_path(client: AsyncClient):
     report_id = report["id"]
 
     # Should be in review_pending status after parsing
+    if report["status"] == ReportStatus.FAILED.value:
+        # Print error details for debugging
+        error_msg = report.get("error_message", "No error message")
+        error_code = report.get("error_code", "No error code")
+        raise AssertionError(
+            f"Report processing failed with status='{report['status']}', "
+            f"error_code='{error_code}', error_message='{error_msg}'"
+        )
+    
     assert report["status"] in [
         ReportStatus.PARSING.value,
         ReportStatus.REVIEW_PENDING.value,

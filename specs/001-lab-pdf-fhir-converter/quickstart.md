@@ -4,6 +4,7 @@
 - Python 3.12
 - PostgreSQL 16
 - Node.js 20+ (for frontend)
+- [uv](https://docs.astral.sh/uv/) - Fast Python package manager
 - Heroku CLI (for deployment)
 
 ## 1) Configure environment
@@ -25,11 +26,11 @@ Optional P5 variables:
 - `FHIR_BASIC_PASSWORD=...`
 
 ## 2) Install dependencies
-Backend:
+Backend (using uv):
 ```bash
 cd backend
-pip install -e ".[dev]"
-alembic upgrade head
+uv sync --all-extras
+uv run alembic upgrade head
 ```
 
 Frontend:
@@ -42,7 +43,7 @@ npm install
 Start backend:
 ```bash
 cd backend
-uvicorn src.main:app --reload
+uv run uvicorn src.main:app --reload
 ```
 
 Start frontend (in separate terminal):
@@ -55,31 +56,31 @@ npm run dev
 Backend lint:
 ```bash
 cd backend
-ruff check .
+uv run ruff check .
 ```
 
 Backend tests:
 ```bash
 cd backend
-pytest
+uv run pytest
 ```
 
 Contract checks:
 ```bash
 cd backend
-pytest tests/contract -v
+uv run pytest tests/contract -v
 ```
 
 Integration tests:
 ```bash
 cd backend
-pytest tests/integration -v
+uv run pytest tests/integration -v
 ```
 
 Unit tests:
 ```bash
 cd backend
-pytest tests/unit -v
+uv run pytest tests/unit -v
 ```
 
 ## 5) Manual MVP workflow test
@@ -95,7 +96,7 @@ pytest tests/unit -v
 - Add Postgres: `heroku addons:create heroku-postgresql:essential-0`
 - Set config vars: `heroku config:set DATABASE_URL=... SECRET_KEY=... LLM_PROVIDER=... LLM_MODEL=... FHIR_SUBMISSION_MODE=manual`
 - Deploy: `git push heroku main`
-- Run migrations: `heroku run -a <app-name> alembic upgrade head`
+- Run migrations: `heroku run -a <app-name> "cd backend && uv run alembic upgrade head"`
 
 ## 7) Post-deploy smoke checks
 - Upload one known-good text PDF.

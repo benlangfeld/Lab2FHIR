@@ -6,11 +6,25 @@ This guide will help you set up and run the Lab PDF to FHIR Converter.
 
 - Python 3.12+
 - PostgreSQL 16+
-- Node.js 20+ (for frontend, future)
+- Node.js 20+ (for frontend)
+- [uv](https://docs.astral.sh/uv/) - Fast Python package manager
 
 ## Quick Start
 
-### 1. Set Up Database
+### 1. Install uv (if not already installed)
+
+```bash
+# macOS and Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Or via pip
+pip install uv
+```
+
+### 2. Set Up Database
 
 ```bash
 # Create PostgreSQL database
@@ -20,14 +34,16 @@ createdb lab2fhir
 createdb lab2fhir_test
 ```
 
-### 2. Install Backend Dependencies
+### 3. Install Backend Dependencies
 
 ```bash
 cd backend
-pip install -e ".[dev]"
+uv sync --all-extras
 ```
 
-### 3. Configure Environment
+This will install all dependencies (including dev dependencies) and create a virtual environment automatically.
+
+### 4. Configure Environment
 
 ```bash
 cd backend
@@ -35,25 +51,25 @@ cp .env.example .env
 # Edit .env with your database URL and other settings
 ```
 
-### 4. Run Database Migrations
+### 5. Run Database Migrations
 
 ```bash
 cd backend
-alembic upgrade head
+uv run alembic upgrade head
 ```
 
-### 5. Generate Test Fixtures
-
-```bash
-cd backend/tests/fixtures
-python generate_fixtures.py
-```
-
-### 6. Run the API Server
+### 6. Generate Test Fixtures
 
 ```bash
 cd backend
-uvicorn src.main:app --reload
+uv run python tests/fixtures/generate_fixtures.py
+```
+
+### 7. Run the API Server
+
+```bash
+cd backend
+uv run uvicorn src.main:app --reload
 ```
 
 The API will be available at `http://localhost:8000`
@@ -83,20 +99,38 @@ Once the server is running, visit:
 
 ```bash
 cd backend
-pytest
+uv run pytest
 ```
 
 ### Run Specific Test Types
 
 ```bash
 # Unit tests only
-pytest tests/unit -v
+uv run pytest tests/unit -v
 
 # Integration tests only
-pytest tests/integration -v
+uv run pytest tests/integration -v
 
 # With coverage
-pytest --cov=src --cov-report=html
+uv run pytest --cov=src --cov-report=html
+```
+
+### Linting and Formatting
+
+```bash
+cd backend
+
+# Check code with ruff
+uv run ruff check .
+
+# Auto-fix issues
+uv run ruff check --fix .
+
+# Check formatting
+uv run ruff format --check .
+
+# Format code
+uv run ruff format .
 ```
 
 ## Example Usage

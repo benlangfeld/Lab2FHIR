@@ -4,18 +4,44 @@ Backend API for Lab PDF to FHIR Converter.
 
 ## Setup
 
+This project uses [uv](https://docs.astral.sh/uv/) for fast, reliable dependency management.
+
 ```bash
-# Install dependencies
-pip install -e ".[dev]"
+# Install uv (if not already installed)
+pip install uv
+
+# Install dependencies (creates virtual environment automatically)
+uv sync --all-extras
 
 # Run tests
-pytest
+uv run pytest
 
 # Run linter
-ruff check .
+uv run ruff check .
+
+# Format code
+uv run ruff format .
 
 # Start development server
-uvicorn src.main:app --reload
+uv run uvicorn src.main:app --reload
+```
+
+## Dependencies
+
+Dependencies are managed in `pyproject.toml` and locked in `uv.lock`:
+
+```bash
+# Add a new dependency
+uv add <package-name>
+
+# Add a dev dependency
+uv add --dev <package-name>
+
+# Update dependencies
+uv lock --upgrade
+
+# Sync environment with lock file
+uv sync
 ```
 
 ## Structure

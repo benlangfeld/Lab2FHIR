@@ -1,7 +1,7 @@
 """ORM models for patient profiles and lab reports."""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import Enum
 
 from sqlalchemy import ForeignKey, Index, String, Text
@@ -41,12 +41,12 @@ class PatientProfile(Base):
     display_name: Mapped[str] = mapped_column(String(200), nullable=False)
     subject_type: Mapped[SubjectType] = mapped_column(nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=lambda: datetime.now(timezone.utc)
+        nullable=False, default=lambda: datetime.now(datetime.UTC)
     )
     updated_at: Mapped[datetime] = mapped_column(
         nullable=False,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(datetime.UTC),
+        onupdate=lambda: datetime.now(datetime.UTC),
     )
 
     # Relationships
@@ -75,12 +75,12 @@ class LabReport(Base):
         ForeignKey("lab_reports.id"), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=lambda: datetime.now(timezone.utc)
+        nullable=False, default=lambda: datetime.now(datetime.UTC)
     )
     updated_at: Mapped[datetime] = mapped_column(
         nullable=False,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(datetime.UTC),
+        onupdate=lambda: datetime.now(datetime.UTC),
     )
 
     # Relationships

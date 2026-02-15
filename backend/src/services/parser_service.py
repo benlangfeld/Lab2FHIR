@@ -52,7 +52,7 @@ class ParserService:
             parsed_data = ParsedLabData(
                 schema_version="1.0",
                 subject_identifier=None,  # Would be extracted from PDF in production
-                report_date=datetime.now(timezone.utc),
+                report_date=datetime.now(),
                 measurements=measurements,
             )
 
@@ -85,7 +85,7 @@ class ParserService:
             List of lab measurements
         """
         measurements = []
-        collection_dt = datetime.now(timezone.utc)
+        collection_dt = datetime.now()
 
         # Simple pattern matching for common lab values
         # This is intentionally minimal for MVP demonstration

@@ -56,7 +56,7 @@ class ParsedLabDataVersion(Base):
     validation_errors: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_by: Mapped[str] = mapped_column(String(200), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=lambda: datetime.now(timezone.utc)
+        nullable=False, default=lambda: datetime.now()
     )
 
     # Relationships
@@ -86,7 +86,7 @@ class EditHistoryEntry(Base):
     new_value: Mapped[str | None] = mapped_column(Text, nullable=True)
     edited_by: Mapped[str] = mapped_column(String(200), nullable=False)
     edited_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=lambda: datetime.now(timezone.utc)
+        nullable=False, default=lambda: datetime.now()
     )
 
     # Relationships
@@ -109,7 +109,7 @@ class FhirBundleArtifact(Base):
     bundle_json: Mapped[dict] = mapped_column(JSONB, nullable=False)
     bundle_hash_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     generated_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=lambda: datetime.now(timezone.utc)
+        nullable=False, default=lambda: datetime.now()
     )
     generation_mode: Mapped[GenerationMode] = mapped_column(
         nullable=False, default=GenerationMode.INITIAL
@@ -145,7 +145,7 @@ class SubmissionRecord(Base):
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     submitted_at: Mapped[datetime | None] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=lambda: datetime.now(timezone.utc)
+        nullable=False, default=lambda: datetime.now()
     )
 
     # Relationships

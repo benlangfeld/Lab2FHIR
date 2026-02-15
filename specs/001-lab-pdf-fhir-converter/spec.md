@@ -59,7 +59,7 @@ A user accidentally uploads the same lab report PDF twice and the system recogni
 
 ---
 
-### User Story 3 - Normalize Units Across Time (Priority: P2)
+### User Story 4 - Normalize Units Across Time (Priority: P2)
 
 A user uploads lab reports from different labs taken over several years with varying unit systems (mg/dL vs mmol/L) and the system normalizes units to consistent standards, enabling accurate longitudinal comparisons.
 
@@ -75,7 +75,7 @@ A user uploads lab reports from different labs taken over several years with var
 
 ---
 
-### User Story 4 - Preserve Original Documents (Priority: P3)
+### User Story 5 - Preserve Original Documents (Priority: P3)
 
 A user needs to verify original lab results or share the official report with a healthcare provider and can retrieve the original PDF document that was uploaded, linked to all derived FHIR resources.
 
@@ -91,7 +91,7 @@ A user needs to verify original lab results or share the official report with a 
 
 ---
 
-### User Story 5 - Re-generate FHIR Bundle from Intermediate Representation (Priority: P4)
+### User Story 6 - Re-generate FHIR Bundle from Intermediate Representation (Priority: P4)
 
 A user has previously uploaded and processed a lab report, creating an intermediate representation. Later, they want to regenerate the FHIR Bundle (e.g., after FHIR schema updates or to apply different settings) without re-uploading and re-parsing the original PDF.
 
@@ -109,7 +109,7 @@ A user has previously uploaded and processed a lab report, creating an intermedi
 
 ---
 
-### User Story 6 - Handle Multiple Patients (Priority: P4)
+### User Story 7 - Handle Multiple Patients (Priority: P4)
 
 A household with multiple people (partner, children) and pets creates patient profiles for each member, then uploads lab reports for different subjects and can distinguish between each person's or pet's results in their health records.
 
@@ -127,7 +127,7 @@ A household with multiple people (partner, children) and pets creates patient pr
 
 ---
 
-### User Story 7 - Automatic FHIR Store Integration (Priority: P5)
+### User Story 8 - Automatic FHIR Store Integration (Priority: P5)
 
 A household health manager configures their FHIR server connection details (e.g., Fasten endpoint, authentication), and after verifying the intermediate representation, the system automatically uploads the FHIR Bundle to the configured FHIR store, eliminating the manual upload step.
 
@@ -202,7 +202,7 @@ A household health manager configures their FHIR server connection details (e.g.
 - **FR-018**: System MUST create individual Observation resources for each analyte measurement
 - **FR-019**: System MUST link Observations to their parent DiagnosticReport
 - **FR-020**: System MUST link the DiagnosticReport to the source DocumentReference
-- **FR-021**: System MUST generate deterministic identifiers for each Observation using the pattern: {subject}|{collection_date}|{normalized_analyte}|{value}|{unit}
+- **FR-021**: System MUST generate deterministic identifiers for each Observation using the pattern: {subject}|{collection_datetime}|{normalized_analyte}|{value}|{unit}
 - **FR-022**: System MUST use transaction Bundles to ensure atomic submission of all resources
 
 #### Multi-Patient Support
@@ -257,7 +257,7 @@ A household health manager configures their FHIR server connection details (e.g.
 
 - **Lab Report**: Represents an uploaded PDF document containing laboratory test results. Key attributes: file hash, upload timestamp, associated patient, processing status (queued, processing, review pending, editing, generating bundle, regenerating bundle, completed, failed), error messages (if any), source file reference.
 
-- **Parsed Lab Data**: Intermediate structured representation of lab results extracted from PDF using structured LLM prompting with JSON schema enforcement. Key attributes: lab metadata (name, address), collection date, result/test date (when different from collection), report date, result list (each with analyte name, value, unit, reference range). This is the validated JSON contract between parsing and FHIR generation. Both original (pre-edit) and corrected (post-edit) versions are stored for audit purposes.
+- **Parsed Lab Data**: Intermediate structured representation of lab results extracted from PDF using structured LLM prompting with JSON schema enforcement. Key attributes: lab metadata (name, address), collection date, result/test date (when different from collection), result list (each with analyte name, value, unit, reference range). This is the validated JSON contract between parsing and FHIR generation. Both original (pre-edit) and corrected (post-edit) versions are stored for audit purposes.
 
 - **Patient/Subject Profile**: Represents the individual (human or animal) to whom the lab results belong. Key attributes: patient identifier (system-generated or user-provided), display name, patient type (human/veterinary), creation date. Relationships: has many lab reports, has many observations. Managed through web interface.
 
@@ -271,17 +271,12 @@ A household health manager configures their FHIR server connection details (e.g.
 
 - **Edit History**: Tracks manual corrections made to intermediate representations. Key attributes: edit timestamp, user identifier, original values, corrected values, validation status. Relationships: associated with one Parsed Lab Data entity.
 
-- **Lab Analyte Measurement**: Individual test result within a lab report. Key attributes: analyte name (original and normalized), value (numeric or qualitative), unit (original and normalized), reference range, collection timestamp. Relationships: belongs to lab report, maps to FHIR Observation.
-
-- **FHIR Bundle**: Transaction bundle containing all FHIR resources for a single lab report. Relationships: contains DocumentReference, DiagnosticReport, and multiple Observation resources.
-
-- **Submission Record**: Tracks the status of FHIR Bundle submission to the target FHIR server. Key attributes: submission timestamp, status (pending/success/failed), retry count, error messages. Relationships: associated with one FHIR Bundle.
 
 ## Constitution Alignment *(mandatory)*
 
 - **Deterministic Behavior**: The system ensures deterministic outputs through:
   - File hash-based deduplication prevents duplicate processing of identical uploads
-  - Deterministic FHIR Observation identifiers using the pattern {subject}|{collection_date}|{normalized_analyte}|{value}|{unit} prevent duplicate observations even if the same data is processed multiple times
+  - Deterministic FHIR Observation identifiers using the pattern {subject}|{collection_datetime}|{normalized_analyte}|{value}|{unit} prevent duplicate observations even if the same data is processed multiple times
   - Normalization rules (date formats, analyte names, units) follow consistent, reproducible transformations
   - FHIR Bundle generation follows a fixed structure and ordering
   - Reprocessing the same source data will always produce identical FHIR resources

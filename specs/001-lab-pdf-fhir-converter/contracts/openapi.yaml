@@ -1,0 +1,470 @@
+openapi: 3.1.0
+info:
+  title: Lab2FHIR API
+  version: 0.1.0
+  description: REST contract for uploading lab PDFs, reviewing/editing intermediate JSON, and generating/downloading FHIR bundles.
+servers:
+  - url: https://{host}
+    variables:
+      host:
+        default: api.lab2fhir.local
+
+tags:
+  - name: Patients
+  - name: Reports
+  - name: ParsedData
+  - name: Bundles
+
+paths:
+  /patients:
+    post:
+      tags: [Patients]
+      summary: Create a patient profile
+      operationId: createPatient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePatientRequest'
+      responses:
+        '201':
+          description: Patient created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientProfile'
+    get:
+      tags: [Patients]
+      summary: List patient profiles
+      operationId: listPatients
+      responses:
+        '200':
+          description: Patient list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PatientProfile'
+                required: [items]
+
+  /reports:
+    post:
+      tags: [Reports]
+      summary: Upload a lab PDF report
+      operationId: uploadReport
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                patientId:
+                  type: string
+                  format: uuid
+                file:
+                  type: string
+                  format: binary
+              required: [patientId, file]
+      responses:
+        '202':
+          description: Upload accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabReport'
+        '409':
+          description: Duplicate file hash detected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags: [Reports]
+      summary: List report processing history
+      operationId: listReports
+      parameters:
+        - name: patientId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Report history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LabReport'
+                required: [items]
+
+  /reports/{reportId}:
+    get:
+      tags: [Reports]
+      summary: Get report status and metadata
+      operationId: getReport
+      parameters:
+        - $ref: '#/components/parameters/ReportId'
+      responses:
+        '200':
+          description: Report found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabReport'
+        '404':
+          description: Not found
+
+  /reports/{reportId}/parsed-data:
+    get:
+      tags: [ParsedData]
+      summary: Get current intermediate parsed JSON
+      operationId: getParsedData
+      parameters:
+        - $ref: '#/components/parameters/ReportId'
+      responses:
+        '200':
+          description: Parsed data payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParsedLabDataVersion'
+    put:
+      tags: [ParsedData]
+      summary: Save corrected intermediate parsed JSON
+      operationId: updateParsedData
+      parameters:
+        - $ref: '#/components/parameters/ReportId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateParsedDataRequest'
+      responses:
+        '200':
+          description: Parsed data updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParsedLabDataVersion'
+        '422':
+          description: Schema validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+
+  /reports/{reportId}/generate-bundle:
+    post:
+      tags: [Bundles]
+      summary: Generate FHIR bundle from current valid parsed data
+      operationId: generateBundle
+      parameters:
+        - $ref: '#/components/parameters/ReportId'
+      responses:
+        '202':
+          description: Bundle generation started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationResponse'
+
+  /reports/{reportId}/regenerate-bundle:
+    post:
+      tags: [Bundles]
+      summary: Regenerate FHIR bundle from stored parsed data without re-parsing PDF
+      operationId: regenerateBundle
+      parameters:
+        - $ref: '#/components/parameters/ReportId'
+      responses:
+        '202':
+          description: Bundle regeneration started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationResponse'
+
+  /reports/{reportId}/bundle:
+    get:
+      tags: [Bundles]
+      summary: Download latest generated FHIR bundle
+      operationId: downloadBundle
+      parameters:
+        - $ref: '#/components/parameters/ReportId'
+      responses:
+        '200':
+          description: Bundle JSON
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/FhirBundle'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FhirBundle'
+        '404':
+          description: No generated bundle available
+
+  /reports/{reportId}/source:
+    get:
+      tags: [Reports]
+      summary: Retrieve original source document metadata or content for a report
+      operationId: getReportSource
+      parameters:
+        - $ref: '#/components/parameters/ReportId'
+      responses:
+        '200':
+          description: Source document metadata/content reference
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reportId:
+                    type: string
+                    format: uuid
+                  filename:
+                    type: string
+                  mimeType:
+                    type: string
+                  storageUri:
+                    type: string
+                  fileHashSha256:
+                    type: string
+                required: [reportId, filename, mimeType, storageUri, fileHashSha256]
+        '404':
+          description: Not found
+
+components:
+  parameters:
+    ReportId:
+      name: reportId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    CreatePatientRequest:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+        subjectType:
+          type: string
+          enum: [human, veterinary]
+      required: [displayName, subjectType]
+
+    PatientProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        externalSubjectId:
+          type: string
+        displayName:
+          type: string
+        subjectType:
+          type: string
+          enum: [human, veterinary]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, externalSubjectId, displayName, subjectType, createdAt]
+
+    LabReport:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        patientId:
+          type: string
+          format: uuid
+        fileHashSha256:
+          type: string
+        status:
+          type: string
+          enum: [uploaded, parsing, review_pending, editing, generating_bundle, regenerating_bundle, completed, failed, duplicate]
+        errorMessage:
+          type: string
+          nullable: true
+        duplicateOfReportId:
+          type: string
+          format: uuid
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, patientId, fileHashSha256, status, createdAt, updatedAt]
+
+    ParsedLabDataVersion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        reportId:
+          type: string
+          format: uuid
+        versionNumber:
+          type: integer
+          minimum: 1
+        versionType:
+          type: string
+          enum: [original, corrected]
+        schemaVersion:
+          type: string
+        payload:
+          $ref: '#/components/schemas/IntermediateLabPayload'
+        validationStatus:
+          type: string
+          enum: [valid, invalid]
+        validationErrors:
+          type: array
+          items:
+            type: object
+          nullable: true
+      required: [id, reportId, versionNumber, versionType, schemaVersion, payload, validationStatus]
+
+    UpdateParsedDataRequest:
+      type: object
+      properties:
+        payload:
+          $ref: '#/components/schemas/IntermediateLabPayload'
+      required: [payload]
+
+    IntermediateLabPayload:
+      type: object
+      properties:
+        labMetadata:
+          type: object
+          properties:
+            name:
+              type: string
+            address:
+              type: string
+          required: [name]
+        measurements:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/LabMeasurement'
+      required: [labMetadata, measurements]
+
+    LabMeasurement:
+      type: object
+      properties:
+        originalAnalyteName:
+          type: string
+        normalizedAnalyteCode:
+          type: string
+        valueType:
+          type: string
+          enum: [numeric, qualitative, operator_numeric]
+        numericValue:
+          type: number
+          nullable: true
+        operator:
+          type: string
+          enum: ['<', '<=', '>', '>=']
+          nullable: true
+        qualitativeValue:
+          type: string
+          nullable: true
+        originalUnit:
+          type: string
+          nullable: true
+        normalizedUnitUcum:
+          type: string
+          nullable: true
+        referenceRangeText:
+          type: string
+          nullable: true
+        collectionDateTime:
+          type: string
+          format: date-time
+        resultDateTime:
+          type: string
+          format: date-time
+          nullable: true
+      required: [originalAnalyteName, normalizedAnalyteCode, valueType, collectionDateTime]
+
+    GenerationResponse:
+      type: object
+      properties:
+        reportId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [generating_bundle, regenerating_bundle]
+      required: [reportId, status]
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      required: [code, message]
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: INTERMEDIATE_SCHEMA_VALIDATION_FAILED
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+      required: [code, message, errors]
+
+    FhirBundle:
+      type: object
+      properties:
+        resourceType:
+          type: string
+          enum: [Bundle]
+        type:
+          type: string
+          enum: [transaction]
+        entry:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            properties:
+              resource:
+                type: object
+              request:
+                type: object
+                properties:
+                  method:
+                    type: string
+                  url:
+                    type: string
+                required: [method, url]
+            required: [resource, request]
+      required: [resourceType, type, entry]

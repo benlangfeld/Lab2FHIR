@@ -13,14 +13,14 @@
 
 **Purpose**: Initialize backend/frontend projects, tooling, and baseline test scaffolding.
 
-- [ ] T001 Create backend project scaffolding and package metadata in backend/pyproject.toml
-- [ ] T002 Create frontend project scaffolding and package metadata in frontend/package.json
-- [ ] T003 [P] Configure backend lint/test tool settings in backend/pyproject.toml
-- [ ] T004 [P] Add backend test directory scaffolding with init files in backend/tests/__init__.py
-- [ ] T005 [P] Create synthetic fixture directories in backend/tests/fixtures/README.md
-- [ ] T006 [P] Add base environment template for runtime settings in backend/.env.example
-- [ ] T007 [P] Add Alembic baseline configuration in backend/alembic.ini
-- [ ] T008 Add developer run/test commands to feature quickstart in specs/001-lab-pdf-fhir-converter/quickstart.md
+- [x] T001 Create backend project scaffolding and package metadata in backend/pyproject.toml
+- [x] T002 Create frontend project scaffolding and package metadata in frontend/package.json
+- [x] T003 [P] Configure backend lint/test tool settings in backend/pyproject.toml
+- [x] T004 [P] Add backend test directory scaffolding with init files in backend/tests/__init__.py
+- [x] T005 [P] Create synthetic fixture directories in backend/tests/fixtures/README.md
+- [x] T006 [P] Add base environment template for runtime settings in backend/.env.example
+- [x] T007 [P] Add Alembic baseline configuration in backend/alembic.ini
+- [x] T008 Add developer run/test commands to feature quickstart in specs/001-lab-pdf-fhir-converter/quickstart.md
 
 ---
 
@@ -30,18 +30,18 @@
 
 **⚠️ CRITICAL**: No user story work starts before this phase completes.
 
-- [ ] T009 Create SQLAlchemy base/session and DB wiring in backend/src/db/session.py
-- [ ] T010 [P] Implement core ORM entities for PatientProfile and LabReport in backend/src/db/models/reporting.py
-- [ ] T011 [P] Implement ORM entities for ParsedLabDataVersion, FhirBundleArtifact, SubmissionRecord, EditHistoryEntry in backend/src/db/models/pipeline.py
-- [ ] T012 Create initial migration for core tables and indexes in backend/alembic/versions/0001_initial_schema.py
-- [ ] T013 Implement report state machine and transition guard utility in backend/src/domain/report_state_machine.py
-- [ ] T014 [P] Define intermediate schema models (payload + measurement) in backend/src/domain/intermediate_schema.py
-- [ ] T015 [P] Implement deterministic ID and normalization utilities in backend/src/domain/determinism.py
-- [ ] T016 [P] Implement FHIR projection defaults and mapping helpers in backend/src/domain/fhir_mapping.py
-- [ ] T017 Create storage abstraction for source PDFs and bundle artifacts in backend/src/services/storage_service.py
-- [ ] T018 Create API error taxonomy and shared exception handlers in backend/src/api/errors.py
-- [ ] T019 Create FastAPI app bootstrap, router registration, and middleware in backend/src/main.py
-- [ ] T020 Add foundational unit tests for schema validation/state machine/determinism in backend/tests/unit/test_foundation.py
+- [x] T009 Create SQLAlchemy base/session and DB wiring in backend/src/db/session.py
+- [x] T010 [P] Implement core ORM entities for PatientProfile and LabReport in backend/src/db/models/reporting.py
+- [x] T011 [P] Implement ORM entities for ParsedLabDataVersion, FhirBundleArtifact, SubmissionRecord, EditHistoryEntry in backend/src/db/models/pipeline.py
+- [x] T012 Create initial migration for core tables and indexes in backend/alembic/versions/0001_initial_schema.py
+- [x] T013 Implement report state machine and transition guard utility in backend/src/domain/report_state_machine.py
+- [x] T014 [P] Define intermediate schema models (payload + measurement) in backend/src/domain/intermediate_schema.py
+- [x] T015 [P] Implement deterministic ID and normalization utilities in backend/src/domain/determinism.py
+- [x] T016 [P] Implement FHIR projection defaults and mapping helpers in backend/src/domain/fhir_mapping.py
+- [x] T017 Create storage abstraction for source PDFs and bundle artifacts in backend/src/services/storage_service.py
+- [x] T018 Create API error taxonomy and shared exception handlers in backend/src/api/errors.py
+- [x] T019 Create FastAPI app bootstrap, router registration, and middleware in backend/src/main.py
+- [x] T020 Add foundational unit tests for schema validation/state machine/determinism in backend/tests/unit/test_foundation.py
 
 **Checkpoint**: Foundation complete; user stories can proceed.
 
@@ -62,15 +62,15 @@
 
 ### Implementation for User Story 1
 
-- [ ] T025 [US1] Implement patient create/list API endpoints in backend/src/api/patients.py
-- [ ] T026 [US1] Implement report upload endpoint with hash calculation and persistence in backend/src/api/reports.py
-- [ ] T027 [US1] Implement text extraction and scanned-PDF rejection logic in backend/src/services/pdf_extraction_service.py
-- [ ] T028 [US1] Implement provider-agnostic parser adapter with constrained schema output in backend/src/services/parser_service.py
-- [ ] T029 [US1] Implement parse pipeline orchestration and status transitions in backend/src/services/report_pipeline_service.py
-- [ ] T030 [US1] Implement get parsed data endpoint in backend/src/api/parsed_data.py
-- [ ] T031 [US1] Implement FHIR bundle generation service (DocumentReference + DiagnosticReport + Observation) in backend/src/services/fhir_bundle_service.py
-- [ ] T032 [US1] Implement generate-bundle and download-bundle endpoints in backend/src/api/bundles.py
-- [ ] T033 [US1] Implement report history and single report status endpoints in backend/src/api/reports.py
+- [x] T025 [US1] Implement patient create/list API endpoints in backend/src/api/patients.py
+- [x] T026 [US1] Implement report upload endpoint with hash calculation and persistence in backend/src/api/reports.py
+- [x] T027 [US1] Implement text extraction and scanned-PDF rejection logic in backend/src/services/pdf_extraction_service.py
+- [x] T028 [US1] Implement provider-agnostic parser adapter with constrained schema output in backend/src/services/parser_service.py
+- [x] T029 [US1] Implement parse pipeline orchestration and status transitions in backend/src/services/report_pipeline_service.py
+- [x] T030 [US1] Implement get parsed data endpoint in backend/src/api/parsed_data.py
+- [x] T031 [US1] Implement FHIR bundle generation service (DocumentReference + DiagnosticReport + Observation) in backend/src/services/fhir_bundle_service.py
+- [x] T032 [US1] Implement generate-bundle and download-bundle endpoints in backend/src/api/bundles.py
+- [x] T033 [US1] Implement report history and single report status endpoints in backend/src/api/reports.py
 
 **Checkpoint**: US1 is independently functional and testable.
 

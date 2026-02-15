@@ -4,6 +4,7 @@
 - Python 3.12
 - PostgreSQL 16
 - Node.js 20+ (for frontend)
+- [uv](https://docs.astral.sh/uv/) - Fast Python package manager
 - Heroku CLI (for deployment)
 
 ## 1) Configure environment
@@ -25,23 +26,62 @@ Optional P5 variables:
 - `FHIR_BASIC_PASSWORD=...`
 
 ## 2) Install dependencies
-Backend:
-- `cd backend`
-- `pip install -r requirements.txt`
-- `alembic upgrade head`
+Backend (using uv):
+```bash
+cd backend
+uv sync --all-extras
+uv run alembic upgrade head
+```
 
 Frontend:
-- `cd frontend`
-- `npm install`
+```bash
+cd frontend
+npm install
+```
 
 ## 3) Run locally
-- Start backend: `cd backend && uvicorn src.main:app --reload`
-- Start frontend: `cd frontend && npm run dev`
+Start backend:
+```bash
+cd backend
+uv run uvicorn src.main:app --reload
+```
+
+Start frontend (in separate terminal):
+```bash
+cd frontend
+npm run dev
+```
 
 ## 4) Run validation checks
-- Backend lint: `cd backend && ruff check .`
-- Backend tests: `cd backend && pytest`
-- Contract checks: `cd backend && pytest tests/contract`
+Backend lint:
+```bash
+cd backend
+uv run ruff check .
+```
+
+Backend tests:
+```bash
+cd backend
+uv run pytest
+```
+
+Contract checks:
+```bash
+cd backend
+uv run pytest tests/contract -v
+```
+
+Integration tests:
+```bash
+cd backend
+uv run pytest tests/integration -v
+```
+
+Unit tests:
+```bash
+cd backend
+uv run pytest tests/unit -v
+```
 
 ## 5) Manual MVP workflow test
 1. Create a patient profile.
@@ -56,7 +96,7 @@ Frontend:
 - Add Postgres: `heroku addons:create heroku-postgresql:essential-0`
 - Set config vars: `heroku config:set DATABASE_URL=... SECRET_KEY=... LLM_PROVIDER=... LLM_MODEL=... FHIR_SUBMISSION_MODE=manual`
 - Deploy: `git push heroku main`
-- Run migrations: `heroku run -a <app-name> alembic upgrade head`
+- Run migrations: `heroku run -a <app-name> "cd backend && uv run alembic upgrade head"`
 
 ## 7) Post-deploy smoke checks
 - Upload one known-good text PDF.

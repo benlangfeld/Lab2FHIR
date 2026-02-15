@@ -25,6 +25,7 @@ dev = [
     "pytest-cov>=4.1.0",
     "ruff>=0.2.0",
     "httpx>=0.26.0",
+    "reportlab>=4.0.0",
 ]
 
 [build-system]

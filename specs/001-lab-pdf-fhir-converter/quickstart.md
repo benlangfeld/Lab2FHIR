@@ -26,22 +26,61 @@ Optional P5 variables:
 
 ## 2) Install dependencies
 Backend:
-- `cd backend`
-- `pip install -r requirements.txt`
-- `alembic upgrade head`
+```bash
+cd backend
+pip install -e ".[dev]"
+alembic upgrade head
+```
 
 Frontend:
-- `cd frontend`
-- `npm install`
+```bash
+cd frontend
+npm install
+```
 
 ## 3) Run locally
-- Start backend: `cd backend && uvicorn src.main:app --reload`
-- Start frontend: `cd frontend && npm run dev`
+Start backend:
+```bash
+cd backend
+uvicorn src.main:app --reload
+```
+
+Start frontend (in separate terminal):
+```bash
+cd frontend
+npm run dev
+```
 
 ## 4) Run validation checks
-- Backend lint: `cd backend && ruff check .`
-- Backend tests: `cd backend && pytest`
-- Contract checks: `cd backend && pytest tests/contract`
+Backend lint:
+```bash
+cd backend
+ruff check .
+```
+
+Backend tests:
+```bash
+cd backend
+pytest
+```
+
+Contract checks:
+```bash
+cd backend
+pytest tests/contract -v
+```
+
+Integration tests:
+```bash
+cd backend
+pytest tests/integration -v
+```
+
+Unit tests:
+```bash
+cd backend
+pytest tests/unit -v
+```
 
 ## 5) Manual MVP workflow test
 1. Create a patient profile.

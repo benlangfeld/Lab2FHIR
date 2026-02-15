@@ -13,14 +13,14 @@
 
 **Purpose**: Initialize backend/frontend projects, tooling, and baseline test scaffolding.
 
-- [ ] T001 Create backend project scaffolding and package metadata in backend/pyproject.toml
-- [ ] T002 Create frontend project scaffolding and package metadata in frontend/package.json
-- [ ] T003 [P] Configure backend lint/test tool settings in backend/pyproject.toml
-- [ ] T004 [P] Add backend test directory scaffolding with init files in backend/tests/__init__.py
-- [ ] T005 [P] Create synthetic fixture directories in backend/tests/fixtures/README.md
-- [ ] T006 [P] Add base environment template for runtime settings in backend/.env.example
-- [ ] T007 [P] Add Alembic baseline configuration in backend/alembic.ini
-- [ ] T008 Add developer run/test commands to feature quickstart in specs/001-lab-pdf-fhir-converter/quickstart.md
+- [x] T001 Create backend project scaffolding and package metadata in backend/pyproject.toml
+- [x] T002 Create frontend project scaffolding and package metadata in frontend/package.json
+- [x] T003 [P] Configure backend lint/test tool settings in backend/pyproject.toml
+- [x] T004 [P] Add backend test directory scaffolding with init files in backend/tests/__init__.py
+- [x] T005 [P] Create synthetic fixture directories in backend/tests/fixtures/README.md
+- [x] T006 [P] Add base environment template for runtime settings in backend/.env.example
+- [x] T007 [P] Add Alembic baseline configuration in backend/alembic.ini
+- [x] T008 Add developer run/test commands to feature quickstart in specs/001-lab-pdf-fhir-converter/quickstart.md
 
 ---
 

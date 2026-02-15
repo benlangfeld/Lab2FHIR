@@ -1,7 +1,7 @@
 """ORM models for patient profiles and lab reports."""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import StrEnum
 
 from sqlalchemy import ForeignKey, Index, String, Text
@@ -40,9 +40,7 @@ class PatientProfile(Base):
     external_subject_id: Mapped[str] = mapped_column(String(200), unique=True, nullable=False)
     display_name: Mapped[str] = mapped_column(String(200), nullable=False)
     subject_type: Mapped[SubjectType] = mapped_column(nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=lambda: datetime.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(nullable=False, default=lambda: datetime.now())
     updated_at: Mapped[datetime] = mapped_column(
         nullable=False,
         default=lambda: datetime.now(),
@@ -74,9 +72,7 @@ class LabReport(Base):
     is_duplicate_of_report_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("lab_reports.id"), nullable=True
     )
-    created_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=lambda: datetime.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(nullable=False, default=lambda: datetime.now())
     updated_at: Mapped[datetime] = mapped_column(
         nullable=False,
         default=lambda: datetime.now(),

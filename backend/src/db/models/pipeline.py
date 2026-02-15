@@ -1,7 +1,7 @@
 """ORM models for pipeline stages (parsing, FHIR generation, submission)."""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import StrEnum
 
 from sqlalchemy import ForeignKey, Index, String, Text
@@ -55,9 +55,7 @@ class ParsedLabDataVersion(Base):
     validation_status: Mapped[ValidationStatus] = mapped_column(nullable=False)
     validation_errors: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_by: Mapped[str] = mapped_column(String(200), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=lambda: datetime.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(nullable=False, default=lambda: datetime.now())
 
     # Relationships
     report: Mapped["LabReport"] = relationship(
@@ -85,9 +83,7 @@ class EditHistoryEntry(Base):
     old_value: Mapped[str | None] = mapped_column(Text, nullable=True)
     new_value: Mapped[str | None] = mapped_column(Text, nullable=True)
     edited_by: Mapped[str] = mapped_column(String(200), nullable=False)
-    edited_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=lambda: datetime.now()
-    )
+    edited_at: Mapped[datetime] = mapped_column(nullable=False, default=lambda: datetime.now())
 
     # Relationships
     parsed_version: Mapped["ParsedLabDataVersion"] = relationship(back_populates="edit_history")
@@ -108,9 +104,7 @@ class FhirBundleArtifact(Base):
     )
     bundle_json: Mapped[dict] = mapped_column(JSONB, nullable=False)
     bundle_hash_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
-    generated_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=lambda: datetime.now()
-    )
+    generated_at: Mapped[datetime] = mapped_column(nullable=False, default=lambda: datetime.now())
     generation_mode: Mapped[GenerationMode] = mapped_column(
         nullable=False, default=GenerationMode.INITIAL
     )
@@ -144,9 +138,7 @@ class SubmissionRecord(Base):
     attempt_count: Mapped[int] = mapped_column(nullable=False, default=0)
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     submitted_at: Mapped[datetime | None] = mapped_column(nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=lambda: datetime.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(nullable=False, default=lambda: datetime.now())
 
     # Relationships
     bundle_artifact: Mapped["FhirBundleArtifact"] = relationship(

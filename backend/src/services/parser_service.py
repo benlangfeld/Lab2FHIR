@@ -1,6 +1,6 @@
 """Parser service for converting PDF text to intermediate schema."""
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 from pydantic import ValidationError as PydanticValidationError
 

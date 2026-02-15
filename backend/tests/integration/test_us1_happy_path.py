@@ -36,23 +36,23 @@ async def test_us1_happy_path(client: AsyncClient):
     # 2. Create a simple test PDF with lab results
     pdf_buffer = io.BytesIO()
     c = canvas.Canvas(pdf_buffer)
-    
+
     # Header
     c.drawString(100, 750, "LABORATORY REPORT")
     c.drawString(100, 720, "Quest Diagnostics Laboratory")
     c.drawString(100, 700, "123 Medical Center Drive, Anytown, ST 12345")
-    
+
     # Patient Info
     c.drawString(100, 660, "Patient Information:")
     c.drawString(120, 640, "Name: Test Patient")
     c.drawString(120, 620, "Patient ID: TEST-001")
     c.drawString(120, 600, "Date of Birth: 1980-01-01")
     c.drawString(120, 580, "Collection Date: 2024-01-15 08:00:00")
-    
+
     # Provider Info
     c.drawString(100, 540, "Ordering Provider: Dr. Jane Smith, MD")
     c.drawString(100, 520, "Report Date: 2024-01-16")
-    
+
     # Results Section
     c.drawString(100, 480, "Test Results:")
     c.drawString(100, 460, "-" * 70)
@@ -62,12 +62,12 @@ async def test_us1_happy_path(client: AsyncClient):
     c.drawString(100, 380, "Hemoglobin A1c          5.5        %          <5.7%")
     c.drawString(100, 360, "Creatinine              1.0        mg/dL      0.7-1.3 mg/dL")
     c.drawString(100, 340, "Total Cholesterol        180        mg/dL      <200 mg/dL")
-    
+
     # Footer
     c.drawString(100, 300, "All results are within normal ranges.")
     c.drawString(100, 280, "Performing Laboratory: Quest Diagnostics")
     c.drawString(100, 260, "Laboratory Director: Dr. Robert Johnson, PhD")
-    
+
     c.save()
     pdf_content = pdf_buffer.getvalue()
 
@@ -89,7 +89,7 @@ async def test_us1_happy_path(client: AsyncClient):
             f"Report processing failed with status='{report['status']}', "
             f"error_code='{error_code}', error_message='{error_msg}'"
         )
-    
+
     assert report["status"] in [
         ReportStatus.PARSING.value,
         ReportStatus.REVIEW_PENDING.value,

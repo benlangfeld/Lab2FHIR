@@ -131,7 +131,7 @@ class ReportPipelineService:
             version_number=version_number,
             version_type=VersionType.ORIGINAL,
             schema_version=parsed_data.schema_version,
-            payload_json=parsed_data.model_dump(),
+            payload_json=parsed_data.model_dump(mode="json"),
             validation_status=ValidationStatus.VALID,
             created_by="system",
         )

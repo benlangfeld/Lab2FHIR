@@ -1,6 +1,5 @@
 """PDF text extraction service with scanned-PDF detection."""
 
-
 import pdfplumber
 
 from src.api.errors import ParsingError, ScannedPDFError
@@ -60,7 +59,7 @@ class PDFExtractionService:
             raise ParsingError(
                 f"Failed to extract text from PDF: {str(e)}",
                 details={"error_type": type(e).__name__},
-            )
+            ) from e
 
     @staticmethod
     def is_text_based_pdf(pdf_content: bytes) -> bool:

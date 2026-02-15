@@ -62,14 +62,14 @@ class ParserService:
             raise ParsingError(
                 "Parsed data failed schema validation",
                 details={"validation_errors": e.errors()},
-            )
+            ) from e
         except ParsingError:
             raise
         except Exception as e:
             raise ParsingError(
                 f"Unexpected error during parsing: {str(e)}",
                 details={"error_type": type(e).__name__},
-            )
+            ) from e
 
     def _extract_measurements_stub(self, text: str) -> list[LabMeasurement]:
         """
@@ -93,9 +93,7 @@ class ParserService:
 
         for line in lines:
             # Look for glucose
-            if "glucose" in line and any(
-                char.isdigit() for char in line
-            ):
+            if "glucose" in line and any(char.isdigit() for char in line):
                 # Extract numeric value (simple approach)
                 import re
 

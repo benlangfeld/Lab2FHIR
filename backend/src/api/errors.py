@@ -1,6 +1,6 @@
 """API error taxonomy and exception handlers."""
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from fastapi import HTTPException, Request, status
@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 
-class ErrorCode(str, Enum):
+class ErrorCode(StrEnum):
     """Error codes for API responses."""
 
     # General errors

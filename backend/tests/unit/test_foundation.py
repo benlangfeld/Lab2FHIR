@@ -1,6 +1,6 @@
 """Unit tests for foundational components: schema validation, state machine, determinism."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from pydantic import ValidationError as PydanticValidationError
@@ -41,7 +41,7 @@ class TestIntermediateSchema:
             value_type=ValueType.NUMERIC,
             numeric_value=95.0,
             original_unit="mg/dL",
-            collection_datetime=datetime(2024, 1, 15, 8, 0, 0, tzinfo=datetime.UTC),
+            collection_datetime=datetime(2024, 1, 15, 8, 0, 0, tzinfo=timezone.utc),
         )
         assert measurement.numeric_value == 95.0
         assert measurement.value_type == ValueType.NUMERIC
@@ -54,7 +54,7 @@ class TestIntermediateSchema:
             numeric_value=0.1,
             operator=ComparisonOperator.LESS_THAN,
             original_unit="ng/mL",
-            collection_datetime=datetime(2024, 1, 15, 8, 0, 0, tzinfo=datetime.UTC),
+            collection_datetime=datetime(2024, 1, 15, 8, 0, 0, tzinfo=timezone.utc),
         )
         assert measurement.operator == ComparisonOperator.LESS_THAN
         assert measurement.numeric_value == 0.1
@@ -65,7 +65,7 @@ class TestIntermediateSchema:
             original_analyte_name="Blood Type",
             value_type=ValueType.QUALITATIVE,
             qualitative_value="O Positive",
-            collection_datetime=datetime(2024, 1, 15, 8, 0, 0, tzinfo=datetime.UTC),
+            collection_datetime=datetime(2024, 1, 15, 8, 0, 0, tzinfo=timezone.utc),
         )
         assert measurement.qualitative_value == "O Positive"
 
@@ -75,7 +75,7 @@ class TestIntermediateSchema:
             LabMeasurement(
                 original_analyte_name="Glucose",
                 value_type=ValueType.NUMERIC,
-                collection_datetime=datetime(2024, 1, 15, 8, 0, 0, tzinfo=datetime.UTC),
+                collection_datetime=datetime(2024, 1, 15, 8, 0, 0, tzinfo=timezone.utc),
             )
         assert "numeric_value is required" in str(exc_info.value)
 
@@ -85,7 +85,7 @@ class TestIntermediateSchema:
             LabMeasurement(
                 original_analyte_name="Blood Type",
                 value_type=ValueType.QUALITATIVE,
-                collection_datetime=datetime(2024, 1, 15, 8, 0, 0, tzinfo=datetime.UTC),
+                collection_datetime=datetime(2024, 1, 15, 8, 0, 0, tzinfo=timezone.utc),
             )
         assert "qualitative_value is required" in str(exc_info.value)
 
@@ -96,7 +96,7 @@ class TestIntermediateSchema:
                 original_analyte_name="PSA",
                 value_type=ValueType.OPERATOR_NUMERIC,
                 numeric_value=0.1,
-                collection_datetime=datetime(2024, 1, 15, 8, 0, 0, tzinfo=datetime.UTC),
+                collection_datetime=datetime(2024, 1, 15, 8, 0, 0, tzinfo=timezone.utc),
             )
         assert "operator is required" in str(exc_info.value)
 
@@ -107,7 +107,7 @@ class TestIntermediateSchema:
             value_type=ValueType.NUMERIC,
             numeric_value=95.0,
             original_unit="mg/dL",
-            collection_datetime=datetime(2024, 1, 15, 8, 0, 0, tzinfo=datetime.UTC),
+            collection_datetime=datetime(2024, 1, 15, 8, 0, 0, tzinfo=timezone.utc),
         )
         parsed_data = ParsedLabData(
             schema_version="1.0",
@@ -120,7 +120,10 @@ class TestIntermediateSchema:
         """Test that parsed lab data requires at least one measurement."""
         with pytest.raises(PydanticValidationError) as exc_info:
             ParsedLabData(schema_version="1.0", measurements=[])
-        assert "At least one measurement is required" in str(exc_info.value)
+        # Pydantic v2 error message format
+        assert "at least 1 item" in str(exc_info.value).lower() or "too_short" in str(
+            exc_info.value
+        )
 
 
 class TestReportStateMachine:
@@ -163,7 +166,7 @@ class TestDeterminism:
 
     def test_observation_id_deterministic(self):
         """Test that observation ID generation is deterministic."""
-        dt = datetime(2024, 1, 15, 8, 0, 0, tzinfo=datetime.UTC)
+        dt = datetime(2024, 1, 15, 8, 0, 0, tzinfo=timezone.utc)
         id1 = generate_observation_id("patient-123", dt, "GLU", 95.0, "mg/dL")
         id2 = generate_observation_id("patient-123", dt, "GLU", 95.0, "mg/dL")
         assert id1 == id2
@@ -171,14 +174,14 @@ class TestDeterminism:
 
     def test_observation_id_different_values(self):
         """Test that different values produce different IDs."""
-        dt = datetime(2024, 1, 15, 8, 0, 0, tzinfo=datetime.UTC)
+        dt = datetime(2024, 1, 15, 8, 0, 0, tzinfo=timezone.utc)
         id1 = generate_observation_id("patient-123", dt, "GLU", 95.0, "mg/dL")
         id2 = generate_observation_id("patient-123", dt, "GLU", 100.0, "mg/dL")
         assert id1 != id2
 
     def test_diagnostic_report_id_deterministic(self):
         """Test that diagnostic report ID generation is deterministic."""
-        dt = datetime(2024, 1, 15, 10, 30, 0, tzinfo=datetime.UTC)
+        dt = datetime(2024, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
         file_hash = "abc123def456"
         id1 = generate_diagnostic_report_id("patient-123", dt, file_hash)
         id2 = generate_diagnostic_report_id("patient-123", dt, file_hash)

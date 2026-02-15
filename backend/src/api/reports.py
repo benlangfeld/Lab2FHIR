@@ -90,9 +90,7 @@ async def upload_report(
         )
 
     # Verify patient exists
-    patient_result = await db.execute(
-        select(PatientProfile).where(PatientProfile.id == patient_id)
-    )
+    patient_result = await db.execute(select(PatientProfile).where(PatientProfile.id == patient_id))
     patient = patient_result.scalar_one_or_none()
     if not patient:
         raise NotFoundError("PatientProfile", str(patient_id))

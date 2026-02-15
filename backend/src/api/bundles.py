@@ -42,7 +42,9 @@ class BundleResponse(BaseModel):
         )
 
 
-@router.post("/{report_id}/generate", response_model=BundleResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{report_id}/generate", response_model=BundleResponse, status_code=status.HTTP_201_CREATED
+)
 async def generate_bundle(
     report_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)],

@@ -1,12 +1,12 @@
 """Intermediate schema models for parsed lab data."""
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
-class ValueType(str, Enum):
+class ValueType(StrEnum):
     """Type of measurement value."""
 
     NUMERIC = "numeric"
@@ -14,7 +14,7 @@ class ValueType(str, Enum):
     OPERATOR_NUMERIC = "operator_numeric"
 
 
-class ComparisonOperator(str, Enum):
+class ComparisonOperator(StrEnum):
     """Comparison operator for numeric values."""
 
     LESS_THAN = "<"
@@ -40,7 +40,9 @@ class LabMeasurement(BaseModel):
     # Value representation
     value_type: ValueType = Field(..., description="Type of value stored")
     numeric_value: float | None = Field(None, description="Numeric value if applicable")
-    operator: ComparisonOperator | None = Field(None, description="Comparison operator if applicable")
+    operator: ComparisonOperator | None = Field(
+        None, description="Comparison operator if applicable"
+    )
     qualitative_value: str | None = Field(
         None, max_length=500, description="Qualitative value if applicable"
     )
@@ -57,39 +59,27 @@ class LabMeasurement(BaseModel):
     )
 
     # Timing
-    collection_datetime: datetime = Field(
-        ..., description="Sample collection date/time (ISO 8601)"
-    )
+    collection_datetime: datetime = Field(..., description="Sample collection date/time (ISO 8601)")
     result_datetime: datetime | None = Field(
         None, description="Result/test date/time if different from collection"
     )
 
-    @field_validator("numeric_value")
-    @classmethod
-    def validate_numeric_value(cls, v: float | None, info) -> float | None:
-        """Validate that numeric_value is present when required."""
-        value_type = info.data.get("value_type")
-        if value_type in (ValueType.NUMERIC, ValueType.OPERATOR_NUMERIC) and v is None:
-            raise ValueError("numeric_value is required for numeric and operator_numeric types")
-        return v
+    @model_validator(mode="after")
+    def validate_value_fields(self) -> "LabMeasurement":
+        """Validate that required fields are present based on value_type."""
+        if self.value_type in (ValueType.NUMERIC, ValueType.OPERATOR_NUMERIC):
+            if self.numeric_value is None:
+                raise ValueError("numeric_value is required for numeric and operator_numeric types")
 
-    @field_validator("qualitative_value")
-    @classmethod
-    def validate_qualitative_value(cls, v: str | None, info) -> str | None:
-        """Validate that qualitative_value is present when required."""
-        value_type = info.data.get("value_type")
-        if value_type == ValueType.QUALITATIVE and not v:
-            raise ValueError("qualitative_value is required for qualitative type")
-        return v
+        if self.value_type == ValueType.QUALITATIVE:
+            if not self.qualitative_value:
+                raise ValueError("qualitative_value is required for qualitative type")
 
-    @field_validator("operator")
-    @classmethod
-    def validate_operator(cls, v: ComparisonOperator | None, info) -> ComparisonOperator | None:
-        """Validate that operator is present when required."""
-        value_type = info.data.get("value_type")
-        if value_type == ValueType.OPERATOR_NUMERIC and v is None:
-            raise ValueError("operator is required for operator_numeric type")
-        return v
+        if self.value_type == ValueType.OPERATOR_NUMERIC:
+            if self.operator is None:
+                raise ValueError("operator is required for operator_numeric type")
+
+        return self
 
     @field_validator("collection_datetime")
     @classmethod
@@ -103,9 +93,7 @@ class LabMeasurement(BaseModel):
 class ParsedLabData(BaseModel):
     """Complete parsed lab data from a single PDF report."""
 
-    schema_version: str = Field(
-        default="1.0", description="Version of this intermediate schema"
-    )
+    schema_version: str = Field(default="1.0", description="Version of this intermediate schema")
 
     # Patient/subject information
     subject_identifier: str | None = Field(
@@ -116,9 +104,7 @@ class ParsedLabData(BaseModel):
     )
 
     # Report metadata
-    report_date: datetime | None = Field(
-        None, description="Overall report date/time if present"
-    )
+    report_date: datetime | None = Field(None, description="Overall report date/time if present")
     ordering_provider: str | None = Field(
         None, max_length=500, description="Ordering provider name if present"
     )

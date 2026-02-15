@@ -39,6 +39,8 @@ packages = ["src"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[tool.ruff.lint]
 select = [
     "E",   # pycodestyle errors
     "W",   # pycodestyle warnings
@@ -50,9 +52,11 @@ select = [
 ]
 ignore = [
     "E501",  # line too long (handled by formatter)
+    "B008",  # function call in argument defaults (FastAPI Depends pattern)
+    "UP017", # datetime.UTC doesn't exist in Python 3.12, only 3.13+
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["src"]
 
 [tool.pytest.ini_options]

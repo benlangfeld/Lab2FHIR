@@ -1,7 +1,7 @@
 """Initial schema for core tables and indexes
 
 Revision ID: 0001_initial_schema
-Revises: 
+Revises:
 Create Date: 2026-02-15 00:00:00.000000
 
 """

@@ -134,9 +134,9 @@ def map_measurement_to_value(measurement: LabMeasurement) -> dict[str, Any]:
                 code=unit,
             ).dict(exclude_none=True),
             "interpretation": [
-                CodeableConcept(
-                    text=f"{operator_str}{measurement.numeric_value} {unit}"
-                ).dict(exclude_none=True)
+                CodeableConcept(text=f"{operator_str}{measurement.numeric_value} {unit}").dict(
+                    exclude_none=True
+                )
             ],
         }
 
@@ -209,8 +209,14 @@ def get_loinc_code_for_analyte(normalized_analyte: str) -> tuple[str, str] | Non
         "CHLORIDE": ("2075-0", "Chloride [Moles/volume] in Serum or Plasma"),
         "CO2": ("2028-9", "Carbon dioxide, total [Moles/volume] in Serum or Plasma"),
         "CALCIUM": ("17861-6", "Calcium [Mass/volume] in Serum or Plasma"),
-        "ALT": ("1742-6", "Alanine aminotransferase [Enzymatic activity/volume] in Serum or Plasma"),
-        "AST": ("1920-8", "Aspartate aminotransferase [Enzymatic activity/volume] in Serum or Plasma"),
+        "ALT": (
+            "1742-6",
+            "Alanine aminotransferase [Enzymatic activity/volume] in Serum or Plasma",
+        ),
+        "AST": (
+            "1920-8",
+            "Aspartate aminotransferase [Enzymatic activity/volume] in Serum or Plasma",
+        ),
         "WBC": ("6690-2", "Leukocytes [#/volume] in Blood by Automated count"),
         "RBC": ("789-8", "Erythrocytes [#/volume] in Blood by Automated count"),
         "HEMOGLOBIN": ("718-7", "Hemoglobin [Mass/volume] in Blood"),

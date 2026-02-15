@@ -75,7 +75,7 @@ class ReportPipelineService:
             parsed_data = await self.parser.parse_lab_report(text)
 
             # Store parsed version
-            parsed_version = await self._store_parsed_version(
+            _parsed_version = await self._store_parsed_version(
                 report_id=report.id,
                 parsed_data=parsed_data,
                 db=db,
@@ -90,7 +90,7 @@ class ReportPipelineService:
             return report
 
         except StateTransitionError as e:
-            raise StateTransitionAPIError(report.status.value, str(e))
+            raise StateTransitionAPIError(report.status.value, str(e)) from e
         except Exception as e:
             # Mark as failed
             report.status = ReportStatus.FAILED

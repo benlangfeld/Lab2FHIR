@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import ForeignKey, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -10,14 +10,14 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.db.session import Base
 
 
-class SubjectType(str, Enum):
+class SubjectType(StrEnum):
     """Subject type enumeration."""
 
     HUMAN = "human"
     VETERINARY = "veterinary"
 
 
-class ReportStatus(str, Enum):
+class ReportStatus(StrEnum):
     """Lab report status enumeration."""
 
     UPLOADED = "uploaded"

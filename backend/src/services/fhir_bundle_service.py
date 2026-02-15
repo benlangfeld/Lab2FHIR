@@ -131,7 +131,7 @@ class FhirBundleService:
             raise BundleGenerationError(
                 f"Failed to generate FHIR bundle: {str(e)}",
                 details={"error_type": type(e).__name__},
-            )
+            ) from e
 
     def _create_fhir_bundle(
         self,
@@ -220,9 +220,7 @@ class FhirBundleService:
             BundleEntry(
                 fullUrl=f"DiagnosticReport/{diag_report_id}",
                 resource=diag_report_resource,
-                request=BundleEntryRequest(
-                    method="PUT", url=f"DiagnosticReport/{diag_report_id}"
-                ),
+                request=BundleEntryRequest(method="PUT", url=f"DiagnosticReport/{diag_report_id}"),
             )
         )
 
@@ -237,9 +235,7 @@ class FhirBundleService:
     def _create_patient_resource(self, patient: PatientProfile) -> Patient:
         """Create FHIR Patient resource."""
         return Patient(
-            identifier=[
-                create_identifier(SYSTEM_LAB2FHIR_SUBJECT_ID, patient.external_subject_id)
-            ],
+            identifier=[create_identifier(SYSTEM_LAB2FHIR_SUBJECT_ID, patient.external_subject_id)],
             name=[HumanName(text=patient.display_name)],
         )
 
@@ -291,9 +287,7 @@ class FhirBundleService:
             result=observation_refs,
         )
 
-    def _create_observation(
-        self, obs_id: str, patient_id: str, measurement
-    ) -> Observation:
+    def _create_observation(self, obs_id: str, patient_id: str, measurement) -> Observation:
         """Create FHIR Observation resource."""
         # Get LOINC code if available
         loinc_code = None

@@ -1,0 +1,8 @@
+# Copilot Agent Environment Configuration
+# See: https://docs.github.com/en/copilot/customizing-copilot/adding-custom-instructions-for-github-copilot
+
+# Preinstall tools and dependencies in Copilot's environment
+tools:
+  # Install uv for Python dependency management (used in this project)
+  - run: pip install uv
+    name: Install uv package manager

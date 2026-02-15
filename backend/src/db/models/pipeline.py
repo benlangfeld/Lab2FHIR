@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
@@ -11,28 +11,28 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.db.session import Base
 
 
-class ValidationStatus(str, Enum):
+class ValidationStatus(StrEnum):
     """Validation status enumeration."""
 
     VALID = "valid"
     INVALID = "invalid"
 
 
-class VersionType(str, Enum):
+class VersionType(StrEnum):
     """Parsed data version type enumeration."""
 
     ORIGINAL = "original"
     CORRECTED = "corrected"
 
 
-class GenerationMode(str, Enum):
+class GenerationMode(StrEnum):
     """Bundle generation mode enumeration."""
 
     INITIAL = "initial"
     REGENERATION = "regeneration"
 
 
-class SubmissionStatus(str, Enum):
+class SubmissionStatus(StrEnum):
     """FHIR submission status enumeration."""
 
     PENDING = "pending"
@@ -44,14 +44,10 @@ class ParsedLabDataVersion(Base):
     """Parsed lab data version entity."""
 
     __tablename__ = "parsed_lab_data_versions"
-    __table_args__ = (
-        Index("ix_parsed_versions_report_version", "report_id", "version_number"),
-    )
+    __table_args__ = (Index("ix_parsed_versions_report_version", "report_id", "version_number"),)
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    report_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("lab_reports.id"), nullable=False
-    )
+    report_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lab_reports.id"), nullable=False)
     version_number: Mapped[int] = mapped_column(nullable=False)
     version_type: Mapped[VersionType] = mapped_column(nullable=False)
     schema_version: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -67,9 +63,7 @@ class ParsedLabDataVersion(Base):
     report: Mapped["LabReport"] = relationship(
         back_populates="parsed_versions", foreign_keys=[report_id]
     )
-    edit_history: Mapped[list["EditHistoryEntry"]] = relationship(
-        back_populates="parsed_version"
-    )
+    edit_history: Mapped[list["EditHistoryEntry"]] = relationship(back_populates="parsed_version")
     bundle_artifacts: Mapped[list["FhirBundleArtifact"]] = relationship(
         back_populates="parsed_version"
     )
@@ -96,9 +90,7 @@ class EditHistoryEntry(Base):
     )
 
     # Relationships
-    parsed_version: Mapped["ParsedLabDataVersion"] = relationship(
-        back_populates="edit_history"
-    )
+    parsed_version: Mapped["ParsedLabDataVersion"] = relationship(back_populates="edit_history")
 
     def __repr__(self) -> str:
         return f"<EditHistoryEntry(id={self.id}, field={self.field_path})>"
@@ -110,9 +102,7 @@ class FhirBundleArtifact(Base):
     __tablename__ = "fhir_bundle_artifacts"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    report_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("lab_reports.id"), nullable=False
-    )
+    report_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lab_reports.id"), nullable=False)
     parsed_version_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("parsed_lab_data_versions.id"), nullable=False
     )
@@ -129,9 +119,7 @@ class FhirBundleArtifact(Base):
     report: Mapped["LabReport"] = relationship(
         back_populates="bundle_artifacts", foreign_keys=[report_id]
     )
-    parsed_version: Mapped["ParsedLabDataVersion"] = relationship(
-        back_populates="bundle_artifacts"
-    )
+    parsed_version: Mapped["ParsedLabDataVersion"] = relationship(back_populates="bundle_artifacts")
     submission_records: Mapped[list["SubmissionRecord"]] = relationship(
         back_populates="bundle_artifact"
     )

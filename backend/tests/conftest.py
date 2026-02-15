@@ -18,7 +18,7 @@ from src.main import app
 def get_test_settings():
     """Get test settings."""
     return Settings(
-        database_url="******localhost:5432/lab2fhir_test",
+        database_url="postgresql://postgres:postgres@localhost:5432/lab2fhir_test",
         pdf_storage_path="./test_storage/pdfs",
         bundle_storage_path="./test_storage/bundles",
         debug=True,

@@ -5,6 +5,7 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError as PydanticValidationError
 
+from src.db.models import ReportStatus
 from src.domain.determinism import (
     calculate_file_hash,
     generate_diagnostic_report_id,
@@ -28,7 +29,6 @@ from src.domain.report_state_machine import (
     is_terminal_status,
     validate_transition,
 )
-from src.db.models import ReportStatus
 
 
 class TestIntermediateSchema:

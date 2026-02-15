@@ -5,13 +5,10 @@ import json
 import uuid
 from datetime import datetime
 
+from fhir.resources.attachment import Attachment
 from fhir.resources.bundle import Bundle, BundleEntry, BundleEntryRequest
 from fhir.resources.diagnosticreport import DiagnosticReport
-from fhir.resources.documentreference import (
-    DocumentReference,
-    DocumentReferenceContent,
-    DocumentReferenceContentAttachment,
-)
+from fhir.resources.documentreference import DocumentReference, DocumentReferenceContent
 from fhir.resources.observation import Observation
 from fhir.resources.patient import Patient, PatientName
 from sqlalchemy import select
@@ -260,7 +257,7 @@ class FhirBundleService:
             identifier=[create_identifier(SYSTEM_LAB2FHIR_FILE_HASH, report.file_hash_sha256)],
             content=[
                 DocumentReferenceContent(
-                    attachment=DocumentReferenceContentAttachment(
+                    attachment=Attachment(
                         contentType=report.mime_type,
                         title=report.original_filename,
                         hash=hex_to_base64_bytes(report.file_hash_sha256),

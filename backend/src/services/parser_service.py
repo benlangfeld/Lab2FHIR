@@ -1,6 +1,6 @@
 """Parser service for converting PDF text to intermediate schema."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pydantic import ValidationError as PydanticValidationError
 
@@ -52,7 +52,7 @@ class ParserService:
             parsed_data = ParsedLabData(
                 schema_version="1.0",
                 subject_identifier=None,  # Would be extracted from PDF in production
-                report_date=datetime.now(datetime.UTC),
+                report_date=datetime.now(timezone.utc),
                 measurements=measurements,
             )
 
@@ -85,7 +85,7 @@ class ParserService:
             List of lab measurements
         """
         measurements = []
-        collection_dt = datetime.now(datetime.UTC)
+        collection_dt = datetime.now(timezone.utc)
 
         # Simple pattern matching for common lab values
         # This is intentionally minimal for MVP demonstration

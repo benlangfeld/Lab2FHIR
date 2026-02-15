@@ -6,7 +6,6 @@ from pydantic import ValidationError as PydanticValidationError
 
 from src.api.errors import ParsingError
 from src.domain.intermediate_schema import (
-    ComparisonOperator,
     LabMeasurement,
     ParsedLabData,
     ValueType,

@@ -58,12 +58,12 @@ export const getParsedData = async (reportId: string): Promise<ParsedData> => {
 }
 
 // Bundles
-export const generateBundle = async (reportId: string): Promise<any> => {
+export const generateBundle = async (reportId: string): Promise<Record<string, unknown>> => {
   const { data } = await api.post(`/bundles/${reportId}/generate`)
   return data
 }
 
-export const downloadBundle = async (reportId: string): Promise<any> => {
+export const downloadBundle = async (reportId: string): Promise<Record<string, unknown>> => {
   const { data } = await api.get(`/bundles/${reportId}/download`)
   return data
 }

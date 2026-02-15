@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.errors import NotFoundError
-from src.db.models import FhirBundleArtifact, GenerationMode, LabReport, ReportStatus
+from src.db.models import FhirBundleArtifact, LabReport, ReportStatus
 from src.db.session import get_db
 from src.domain.report_state_machine import validate_transition
 from src.services.fhir_bundle_service import FhirBundleService, get_fhir_bundle_service

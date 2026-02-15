@@ -129,7 +129,7 @@ export default function ReportsPage() {
 
             {uploadMutation.isError && (
               <div className="error-message">
-                Error: {(uploadMutation.error as any).response?.data?.error?.message || (uploadMutation.error as Error).message}
+                Error: {(uploadMutation.error as { response?: { data?: { error?: { message?: string } } } }).response?.data?.error?.message || (uploadMutation.error as Error).message}
               </div>
             )}
           </form>

@@ -3,7 +3,6 @@
 import json
 import uuid
 from pathlib import Path
-from typing import BinaryIO
 
 from src.config import get_settings
 

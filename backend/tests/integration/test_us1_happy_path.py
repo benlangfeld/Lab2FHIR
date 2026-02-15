@@ -1,7 +1,6 @@
 """Integration test for User Story 1 happy path: upload → parse → generate → download."""
 
 import io
-from datetime import datetime
 
 import pytest
 from httpx import AsyncClient
@@ -82,7 +81,7 @@ async def test_us1_happy_path(client: AsyncClient):
         # 6. Generate FHIR bundle
         response = await client.post(f"/api/v1/bundles/{report_id}/generate")
         assert response.status_code == 201
-        bundle_info = response.json()
+        _bundle_info = response.json()  # noqa: F841
 
         # 7. Download bundle
         response = await client.get(f"/api/v1/bundles/{report_id}/download")
@@ -131,7 +130,7 @@ async def test_duplicate_upload_detection(client: AsyncClient):
 
     response = await client.post("/api/v1/reports", files=files, data=data)
     assert response.status_code == 201
-    first_report = response.json()
+    _first_report = response.json()  # noqa: F841
 
     # Second upload (duplicate)
     files = {"file": ("lab_report_copy.pdf", pdf_content, "application/pdf")}

@@ -1,7 +1,7 @@
 """Pytest configuration and fixtures."""
 
 import asyncio
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
@@ -9,7 +9,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.config import Settings, get_settings
+from src.config import Settings
 from src.db.session import Base, get_db
 from src.main import app
 
@@ -37,40 +37,40 @@ def event_loop():
 async def test_db() -> AsyncGenerator[AsyncSession, None]:
     """Create test database session."""
     settings = get_test_settings()
-    
+
     # Create async engine
     engine = create_async_engine(
         settings.database_url.replace("postgresql://", "postgresql+asyncpg://"),
         echo=False,
     )
-    
+
     # Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     # Create session
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-    
+
     async with async_session() as session:
         yield session
-    
+
     # Drop tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-    
+
     await engine.dispose()
 
 
 @pytest_asyncio.fixture
 async def client(test_db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """Create test client."""
-    
+
     async def override_get_db():
         yield test_db
-    
+
     app.dependency_overrides[get_db] = override_get_db
-    
+
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
-    
+
     app.dependency_overrides.clear()

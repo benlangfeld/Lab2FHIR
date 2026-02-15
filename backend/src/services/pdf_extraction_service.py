@@ -1,6 +1,5 @@
 """PDF text extraction service with scanned-PDF detection."""
 
-from typing import BinaryIO
 
 import pdfplumber
 

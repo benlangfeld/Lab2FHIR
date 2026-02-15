@@ -26,9 +26,13 @@ export interface ParsedData {
   version_number: number
   version_type: string
   schema_version: string
-  payload: any
+  payload: {
+    patient_info?: Record<string, unknown>
+    lab_metadata?: Record<string, unknown>
+    measurements?: Array<Record<string, unknown>>
+  }
   validation_status: string
-  validation_errors?: any
+  validation_errors?: Record<string, unknown>
   created_by: string
   created_at: string
 }

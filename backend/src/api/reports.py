@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.errors import ConflictError, DuplicateUploadError, NotFoundError, ValidationError
+from src.api.errors import DuplicateUploadError, NotFoundError, ValidationError
 from src.db.models import LabReport, PatientProfile, ReportStatus
 from src.db.session import get_db
 from src.domain.determinism import calculate_file_hash
@@ -149,7 +149,7 @@ async def upload_report(
     try:
         await pipeline.process_report(report.id, db)
         await db.refresh(report)
-    except Exception as e:
+    except Exception:
         # Processing error - report is already marked as failed by pipeline
         await db.refresh(report)
 

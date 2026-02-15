@@ -1,6 +1,5 @@
 """Report state machine and transition validation."""
 
-from enum import Enum
 from typing import Any
 
 from src.db.models import ReportStatus

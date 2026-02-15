@@ -9,8 +9,7 @@ from fhir.resources.identifier import Identifier
 from fhir.resources.quantity import Quantity
 from fhir.resources.reference import Reference
 
-from src.domain.determinism import hex_to_base64_bytes
-from src.domain.intermediate_schema import ComparisonOperator, LabMeasurement, ValueType
+from src.domain.intermediate_schema import LabMeasurement, ValueType
 
 
 def create_identifier(system: str, value: str) -> Identifier:

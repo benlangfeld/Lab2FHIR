@@ -9,8 +9,9 @@ from fhir.resources.attachment import Attachment
 from fhir.resources.bundle import Bundle, BundleEntry, BundleEntryRequest
 from fhir.resources.diagnosticreport import DiagnosticReport
 from fhir.resources.documentreference import DocumentReference, DocumentReferenceContent
+from fhir.resources.humanname import HumanName
 from fhir.resources.observation import Observation
-from fhir.resources.patient import Patient, PatientName
+from fhir.resources.patient import Patient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -239,7 +240,7 @@ class FhirBundleService:
             identifier=[
                 create_identifier(SYSTEM_LAB2FHIR_SUBJECT_ID, patient.external_subject_id)
             ],
-            name=[PatientName(text=patient.display_name)],
+            name=[HumanName(text=patient.display_name)],
         )
 
     def _create_document_reference(

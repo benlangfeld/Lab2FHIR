@@ -36,13 +36,38 @@ async def test_us1_happy_path(client: AsyncClient):
     # 2. Create a simple test PDF with lab results
     pdf_buffer = io.BytesIO()
     c = canvas.Canvas(pdf_buffer)
+    
+    # Header
     c.drawString(100, 750, "LABORATORY REPORT")
-    c.drawString(100, 700, "Patient: Test Patient")
-    c.drawString(100, 650, "Date: 2024-01-15")
-    c.drawString(100, 600, "")
-    c.drawString(100, 550, "Results:")
-    c.drawString(100, 500, "Glucose: 95 mg/dL (Reference: 70-100)")
-    c.drawString(100, 450, "Hemoglobin A1c: 5.5% (Reference: <5.7)")
+    c.drawString(100, 720, "Quest Diagnostics Laboratory")
+    c.drawString(100, 700, "123 Medical Center Drive, Anytown, ST 12345")
+    
+    # Patient Info
+    c.drawString(100, 660, "Patient Information:")
+    c.drawString(120, 640, "Name: Test Patient")
+    c.drawString(120, 620, "Patient ID: TEST-001")
+    c.drawString(120, 600, "Date of Birth: 1980-01-01")
+    c.drawString(120, 580, "Collection Date: 2024-01-15 08:00:00")
+    
+    # Provider Info
+    c.drawString(100, 540, "Ordering Provider: Dr. Jane Smith, MD")
+    c.drawString(100, 520, "Report Date: 2024-01-16")
+    
+    # Results Section
+    c.drawString(100, 480, "Test Results:")
+    c.drawString(100, 460, "-" * 70)
+    c.drawString(100, 440, "Test Name                Value      Unit       Reference Range")
+    c.drawString(100, 420, "-" * 70)
+    c.drawString(100, 400, "Glucose                  95.0       mg/dL      70-100 mg/dL")
+    c.drawString(100, 380, "Hemoglobin A1c          5.5        %          <5.7%")
+    c.drawString(100, 360, "Creatinine              1.0        mg/dL      0.7-1.3 mg/dL")
+    c.drawString(100, 340, "Total Cholesterol        180        mg/dL      <200 mg/dL")
+    
+    # Footer
+    c.drawString(100, 300, "All results are within normal ranges.")
+    c.drawString(100, 280, "Performing Laboratory: Quest Diagnostics")
+    c.drawString(100, 260, "Laboratory Director: Dr. Robert Johnson, PhD")
+    
     c.save()
     pdf_content = pdf_buffer.getvalue()
 
@@ -125,11 +150,21 @@ async def test_duplicate_upload_detection(client: AsyncClient):
     assert response.status_code == 201
     patient_id = response.json()["id"]
 
-    # Create PDF
+    # Create PDF with sufficient content
     pdf_buffer = io.BytesIO()
     c = canvas.Canvas(pdf_buffer)
-    c.drawString(100, 750, "Test Lab Report for Duplicate Detection")
-    c.drawString(100, 700, "Glucose: 100 mg/dL")
+    c.drawString(100, 750, "LABORATORY REPORT - Duplicate Detection Test")
+    c.drawString(100, 720, "Quest Diagnostics Laboratory")
+    c.drawString(100, 690, "Patient: Test Patient 2")
+    c.drawString(100, 670, "Patient ID: TEST-002")
+    c.drawString(100, 650, "Collection Date: 2024-01-15")
+    c.drawString(100, 620, "Test Results:")
+    c.drawString(100, 600, "Glucose: 100 mg/dL (Reference: 70-100 mg/dL)")
+    c.drawString(100, 580, "Hemoglobin A1c: 5.8% (Reference: <5.7%)")
+    c.drawString(100, 560, "Total Cholesterol: 195 mg/dL (Reference: <200 mg/dL)")
+    c.drawString(100, 540, "HDL Cholesterol: 55 mg/dL (Reference: >40 mg/dL)")
+    c.drawString(100, 500, "Performing Laboratory: Quest Diagnostics")
+    c.drawString(100, 480, "Ordering Provider: Dr. Jane Smith, MD")
     c.save()
     pdf_content = pdf_buffer.getvalue()
 

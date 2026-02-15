@@ -30,13 +30,13 @@
 
 **⚠️ CRITICAL**: No user story work starts before this phase completes.
 
-- [ ] T009 Create SQLAlchemy base/session and DB wiring in backend/src/db/session.py
-- [ ] T010 [P] Implement core ORM entities for PatientProfile and LabReport in backend/src/db/models/reporting.py
-- [ ] T011 [P] Implement ORM entities for ParsedLabDataVersion, FhirBundleArtifact, SubmissionRecord, EditHistoryEntry in backend/src/db/models/pipeline.py
-- [ ] T012 Create initial migration for core tables and indexes in backend/alembic/versions/0001_initial_schema.py
-- [ ] T013 Implement report state machine and transition guard utility in backend/src/domain/report_state_machine.py
-- [ ] T014 [P] Define intermediate schema models (payload + measurement) in backend/src/domain/intermediate_schema.py
-- [ ] T015 [P] Implement deterministic ID and normalization utilities in backend/src/domain/determinism.py
+- [x] T009 Create SQLAlchemy base/session and DB wiring in backend/src/db/session.py
+- [x] T010 [P] Implement core ORM entities for PatientProfile and LabReport in backend/src/db/models/reporting.py
+- [x] T011 [P] Implement ORM entities for ParsedLabDataVersion, FhirBundleArtifact, SubmissionRecord, EditHistoryEntry in backend/src/db/models/pipeline.py
+- [x] T012 Create initial migration for core tables and indexes in backend/alembic/versions/0001_initial_schema.py
+- [x] T013 Implement report state machine and transition guard utility in backend/src/domain/report_state_machine.py
+- [x] T014 [P] Define intermediate schema models (payload + measurement) in backend/src/domain/intermediate_schema.py
+- [x] T015 [P] Implement deterministic ID and normalization utilities in backend/src/domain/determinism.py
 - [ ] T016 [P] Implement FHIR projection defaults and mapping helpers in backend/src/domain/fhir_mapping.py
 - [ ] T017 Create storage abstraction for source PDFs and bundle artifacts in backend/src/services/storage_service.py
 - [ ] T018 Create API error taxonomy and shared exception handlers in backend/src/api/errors.py

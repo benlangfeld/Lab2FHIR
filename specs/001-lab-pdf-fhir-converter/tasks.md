@@ -62,15 +62,15 @@
 
 ### Implementation for User Story 1
 
-- [ ] T025 [US1] Implement patient create/list API endpoints in backend/src/api/patients.py
-- [ ] T026 [US1] Implement report upload endpoint with hash calculation and persistence in backend/src/api/reports.py
-- [ ] T027 [US1] Implement text extraction and scanned-PDF rejection logic in backend/src/services/pdf_extraction_service.py
-- [ ] T028 [US1] Implement provider-agnostic parser adapter with constrained schema output in backend/src/services/parser_service.py
-- [ ] T029 [US1] Implement parse pipeline orchestration and status transitions in backend/src/services/report_pipeline_service.py
-- [ ] T030 [US1] Implement get parsed data endpoint in backend/src/api/parsed_data.py
-- [ ] T031 [US1] Implement FHIR bundle generation service (DocumentReference + DiagnosticReport + Observation) in backend/src/services/fhir_bundle_service.py
-- [ ] T032 [US1] Implement generate-bundle and download-bundle endpoints in backend/src/api/bundles.py
-- [ ] T033 [US1] Implement report history and single report status endpoints in backend/src/api/reports.py
+- [x] T025 [US1] Implement patient create/list API endpoints in backend/src/api/patients.py
+- [x] T026 [US1] Implement report upload endpoint with hash calculation and persistence in backend/src/api/reports.py
+- [x] T027 [US1] Implement text extraction and scanned-PDF rejection logic in backend/src/services/pdf_extraction_service.py
+- [x] T028 [US1] Implement provider-agnostic parser adapter with constrained schema output in backend/src/services/parser_service.py
+- [x] T029 [US1] Implement parse pipeline orchestration and status transitions in backend/src/services/report_pipeline_service.py
+- [x] T030 [US1] Implement get parsed data endpoint in backend/src/api/parsed_data.py
+- [x] T031 [US1] Implement FHIR bundle generation service (DocumentReference + DiagnosticReport + Observation) in backend/src/services/fhir_bundle_service.py
+- [x] T032 [US1] Implement generate-bundle and download-bundle endpoints in backend/src/api/bundles.py
+- [x] T033 [US1] Implement report history and single report status endpoints in backend/src/api/reports.py
 
 **Checkpoint**: US1 is independently functional and testable.
 

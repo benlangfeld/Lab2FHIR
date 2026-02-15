@@ -49,12 +49,13 @@ def create_app() -> FastAPI:
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(Exception, general_exception_handler)
 
-    # Register routers (will be added as we implement them)
-    # from src.api import patients, reports, parsed_data, bundles
-    # app.include_router(patients.router, prefix="/api/v1/patients", tags=["patients"])
-    # app.include_router(reports.router, prefix="/api/v1/reports", tags=["reports"])
-    # app.include_router(parsed_data.router, prefix="/api/v1/parsed-data", tags=["parsed-data"])
-    # app.include_router(bundles.router, prefix="/api/v1/bundles", tags=["bundles"])
+    # Register routers
+    from src.api import bundles, parsed_data, patients, reports
+
+    app.include_router(patients.router, prefix="/api/v1/patients", tags=["patients"])
+    app.include_router(reports.router, prefix="/api/v1/reports", tags=["reports"])
+    app.include_router(parsed_data.router, prefix="/api/v1/parsed-data", tags=["parsed-data"])
+    app.include_router(bundles.router, prefix="/api/v1/bundles", tags=["bundles"])
 
     # Health check endpoint
     @app.get("/health")
